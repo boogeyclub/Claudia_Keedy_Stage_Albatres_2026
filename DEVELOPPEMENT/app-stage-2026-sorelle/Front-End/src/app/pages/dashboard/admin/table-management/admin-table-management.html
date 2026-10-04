@@ -1,0 +1,230 @@
+<section class="relative isolate overflow-hidden">
+  <div class="pointer-events-none absolute -right-28 top-0 size-80 rounded-full bg-cacao-yellow/30 blur-3xl"></div>
+  <div class="pointer-events-none absolute -left-28 bottom-0 size-72 rounded-full bg-cacao-gold/20 blur-3xl"></div>
+
+  @if (table(); as currentTable) {
+    <div class="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-11 lg:px-8 lg:py-14">
+      <a class="inline-flex items-center gap-2 text-sm font-extrabold text-cacao-roast transition hover:text-cacao-amber" routerLink="/dashboard/admin">
+        <svg class="size-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m15 18-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        {{ i18n.t('dashboard.admin.management.back') }}
+      </a>
+
+      <div class="mt-6 overflow-hidden rounded-[2rem] bg-cacao-ink px-6 py-8 text-white shadow-[0_26px_70px_rgba(59,33,23,0.23)] sm:px-9 sm:py-10">
+        <div class="flex flex-col gap-7 lg:flex-row lg:items-start lg:justify-between">
+          <div class="max-w-3xl">
+            <div class="flex flex-wrap items-center gap-3">
+              <span class="inline-flex items-center gap-2 rounded-full border border-cacao-yellow/30 bg-white/10 px-3 py-1.5 text-[0.68rem] font-extrabold uppercase tracking-[0.16em] text-cacao-yellow">
+                <span class="size-1.5 rounded-full bg-cacao-gold"></span>
+                {{ i18n.t('dashboard.admin.management.eyebrow') }}
+              </span>
+              @if (currentTable.isAuditOnly) {
+                <span class="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[0.68rem] font-extrabold uppercase tracking-[0.13em] text-cacao-cream">
+                  {{ i18n.t('dashboard.admin.management.auditOnly') }}
+                </span>
+              }
+            </div>
+            <div class="mt-5 flex items-center gap-4">
+              <span class="grid size-12 place-items-center rounded-2xl bg-cacao-yellow text-cacao-ink">
+                @switch (currentTable.icon) {
+                  @case ('users') {
+                    <svg class="size-6" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M16 20v-1.6c0-1.8-1.8-3.2-4-3.2s-4 1.4-4 3.2V20M12 11.8a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4ZM18.2 7a2.5 2.5 0 0 1 0 4.7M20.5 20v-1.4c0-1.3-.8-2.4-2.2-2.9M5.8 7a2.5 2.5 0 0 0 0 4.7M3.5 20v-1.4c0-1.3.8-2.4 2.2-2.9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                  }
+                  @case ('person') {
+                    <svg class="size-6" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.7-3.3 3-5 7-5s6.3 1.7 7 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  }
+                  @case ('monitor') {
+                    <svg class="size-6" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 20h7M12 16.5V20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  }
+                  @case ('mail') {
+                    <svg class="size-6" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="m4 7 8 6 8-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  }
+                  @case ('key') {
+                    <svg class="size-6" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="8.5" cy="15.5" r="3.5" stroke="currentColor" stroke-width="1.8"/><path d="m11 13 8-8M15 7l2 2M17 5l2 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  }
+                  @case ('shield') {
+                    <svg class="size-6" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.5 20 7.8v5.9c0 3.4-3 5.7-8 6.8-5-1.1-8-3.4-8-6.8V7.8l8-4.3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m8.6 12 2.1 2.1 4.8-4.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  }
+                  @case ('link') {
+                    <svg class="size-6" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9.2 14.8-2 2a3 3 0 1 1-4.2-4.2l3.7-3.7a3 3 0 0 1 4.2 0M14.8 9.2l2-2a3 3 0 1 1 4.2 4.2l-3.7 3.7a3 3 0 0 1-4.2 0M8.5 15.5l7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  }
+                  @default {
+                    <svg class="size-6" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 8v5l3.1 2M20 12a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  }
+                }
+              </span>
+              <div>
+                <p class="font-mono text-xs font-bold text-cacao-yellow">{{ currentTable.schemaName }}</p>
+                <h1 class="mt-1 text-3xl font-black tracking-[-0.05em] sm:text-4xl">{{ i18n.t(currentTable.titleKey) }}</h1>
+              </div>
+            </div>
+            <p class="mt-5 text-base leading-7 text-cacao-cream/80">{{ i18n.t(currentTable.descriptionKey) }}</p>
+          </div>
+
+          <div class="flex shrink-0 flex-wrap items-center gap-3 lg:justify-end">
+            <button class="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60" type="button" [disabled]="isLoading()" (click)="loadRecords()">
+              <svg class="mr-2 size-4" [class.animate-spin]="isLoading()" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              {{ i18n.t('dashboard.admin.actions.refresh') }}
+            </button>
+            @if (currentTable.createFields) {
+              <button class="inline-flex items-center justify-center rounded-xl bg-cacao-yellow px-4 py-3 text-sm font-extrabold text-cacao-ink transition hover:-translate-y-0.5 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60" type="button" [disabled]="isLoadingLookups() || isSaving()" (click)="openCreate()">
+                <svg class="mr-2 size-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                {{ i18n.t('dashboard.admin.actions.add') }}
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 rounded-2xl border border-cacao-gold/30 bg-cacao-pale/65 px-5 py-4 text-sm leading-6 text-cacao-roast" role="note">
+        <span class="mr-2 inline-grid size-5 translate-y-1 place-items-center rounded-full bg-cacao-amber text-xs font-black text-white">!</span>
+        {{ i18n.t(currentTable.securityNoteKey) }}
+      </div>
+
+      @if (editorMode(); as mode) {
+        <article class="mt-7 overflow-hidden rounded-[2rem] border border-cacao-gold/30 bg-white shadow-[0_14px_38px_rgba(59,33,23,0.08)]">
+          <div class="flex flex-col gap-4 border-b border-cacao-gold/20 bg-cacao-cream/60 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+            <div>
+              <p class="text-xs font-extrabold uppercase tracking-[0.15em] text-cacao-amber">{{ i18n.t(mode === 'create' ? 'dashboard.admin.management.createEyebrow' : 'dashboard.admin.management.editEyebrow') }}</p>
+              <h2 class="mt-1 text-xl font-black tracking-[-0.035em] text-cacao-ink">{{ i18n.t(mode === 'create' ? 'dashboard.admin.management.createTitle' : 'dashboard.admin.management.editTitle') }}</h2>
+            </div>
+            <button class="inline-flex shrink-0 items-center justify-center rounded-xl px-3 py-2 text-sm font-extrabold text-cacao-brown transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60" type="button" [disabled]="isSaving()" (click)="closeEditor()">
+              {{ i18n.t('dashboard.admin.actions.cancel') }}
+            </button>
+          </div>
+
+          <form class="p-6 sm:p-8" [formGroup]="editorForm" (ngSubmit)="saveEditor()" novalidate>
+            @if (mode === 'create' && currentTable.key === 'utilisateurs') {
+              <div class="mb-6 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-900">
+                {{ i18n.t('dashboard.admin.management.temporaryPasswordNotice') }}
+              </div>
+            }
+            <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              @for (field of fieldsForCurrentEditor(); track field.key) {
+                <div>
+                  <label class="mb-2 block text-sm font-extrabold text-cacao-ink" [for]="controlId(field)">
+                    {{ i18n.t(field.labelKey) }}
+                    @if (field.required) { <span class="text-red-700" aria-hidden="true">*</span> }
+                  </label>
+                  @if (isSelect(field)) {
+                    <select class="w-full rounded-xl border bg-white px-3.5 py-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:ring-4 focus:ring-cacao-yellow/20" [class.border-red-400]="editorForm.get(field.key)?.invalid && editorForm.get(field.key)?.touched" [class.border-cacao-sand]="!(editorForm.get(field.key)?.invalid && editorForm.get(field.key)?.touched)" [id]="controlId(field)" [formControlName]="field.key">
+                      <option value="" disabled>{{ i18n.t('dashboard.admin.management.selectOption') }}</option>
+                      @for (option of optionsFor(field); track option.value) {
+                        <option [value]="option.value">{{ option.label }}</option>
+                      }
+                    </select>
+                  } @else {
+                    <input class="w-full rounded-xl border bg-white px-3.5 py-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:ring-4 focus:ring-cacao-yellow/20" [class.border-red-400]="editorForm.get(field.key)?.invalid && editorForm.get(field.key)?.touched" [class.border-cacao-sand]="!(editorForm.get(field.key)?.invalid && editorForm.get(field.key)?.touched)" [id]="controlId(field)" [type]="inputType(field)" [attr.autocomplete]="field.autocomplete ?? 'off'" [attr.maxlength]="field.maxLength ?? null" [formControlName]="field.key" />
+                  }
+                  @if (editorForm.get(field.key)?.invalid && editorForm.get(field.key)?.touched) {
+                    <p class="mt-1.5 text-xs font-semibold text-red-700">{{ i18n.t('dashboard.admin.management.invalidField') }}</p>
+                  }
+                </div>
+              }
+            </div>
+            <div class="mt-7 flex flex-wrap items-center gap-3">
+              <button class="inline-flex items-center justify-center rounded-xl bg-cacao-ink px-5 py-3 text-sm font-extrabold text-white transition hover:bg-cacao-roast disabled:cursor-not-allowed disabled:opacity-60" type="submit" [disabled]="isSaving()">
+                @if (isSaving()) { <span class="mr-2 size-4 animate-spin rounded-full border-2 border-cacao-yellow border-r-transparent"></span> }
+                {{ i18n.t(mode === 'create' ? 'dashboard.admin.actions.createRecord' : 'dashboard.admin.actions.saveChanges') }}
+              </button>
+              <button class="rounded-xl px-4 py-3 text-sm font-extrabold text-cacao-brown transition hover:bg-cacao-cream disabled:cursor-not-allowed disabled:opacity-60" type="button" [disabled]="isSaving()" (click)="closeEditor()">
+                {{ i18n.t('dashboard.admin.actions.cancel') }}
+              </button>
+            </div>
+          </form>
+        </article>
+      }
+
+      @if (removalCandidate(); as candidate) {
+        <article class="mt-7 rounded-[1.5rem] border border-red-200 bg-red-50 p-5 shadow-[0_10px_25px_rgba(127,29,29,0.06)] sm:flex sm:items-center sm:justify-between sm:gap-6">
+          <div>
+            <h2 class="font-black text-red-950">{{ i18n.t('dashboard.admin.management.confirmActionTitle') }}</h2>
+            <p class="mt-1 text-sm leading-6 text-red-900">{{ i18n.t('dashboard.admin.management.confirmActionDescription', { id: recordId(candidate) }) }}</p>
+          </div>
+          <div class="mt-4 flex shrink-0 gap-3 sm:mt-0">
+            <button class="rounded-xl bg-red-700 px-4 py-2.5 text-sm font-extrabold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60" type="button" [disabled]="removingRecordId() !== null" (click)="confirmRemoval()">
+              @if (removingRecordId() !== null) { <span class="mr-2 inline-block size-3 animate-spin rounded-full border-2 border-white border-r-transparent"></span> }
+              {{ i18n.t(currentTable.removeActionKey ?? 'dashboard.admin.actions.delete') }}
+            </button>
+            <button class="rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-extrabold text-red-900 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60" type="button" [disabled]="removingRecordId() !== null" (click)="cancelRemoval()">
+              {{ i18n.t('dashboard.admin.actions.cancel') }}
+            </button>
+          </div>
+        </article>
+      }
+
+      <article class="mt-7 overflow-hidden rounded-[2rem] border border-cacao-gold/25 bg-white shadow-[0_14px_38px_rgba(59,33,23,0.08)]">
+        <div class="flex flex-col gap-3 border-b border-cacao-gold/20 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+          <div>
+            <h2 class="text-xl font-black tracking-[-0.035em] text-cacao-ink">{{ i18n.t('dashboard.admin.management.recordsTitle') }}</h2>
+            <p class="mt-1 text-sm text-cacao-brown">{{ i18n.t('dashboard.admin.management.recordsDescription') }}</p>
+          </div>
+          <span class="w-fit rounded-full bg-cacao-pale px-3 py-1.5 text-xs font-extrabold text-cacao-roast">{{ records().length }} {{ i18n.t('dashboard.admin.management.recordsCount') }}</span>
+        </div>
+
+        @if (isLoading()) {
+          <div class="flex min-h-52 items-center justify-center gap-3 px-6 text-sm font-bold text-cacao-brown">
+            <span class="size-5 animate-spin rounded-full border-2 border-cacao-amber border-r-transparent"></span>
+            {{ i18n.t('dashboard.admin.management.loading') }}
+          </div>
+        } @else if (loadFailed()) {
+          <div class="px-6 py-12 text-center sm:px-8">
+            <p class="font-bold text-cacao-brown">{{ i18n.t(loadError().key, loadError().params ?? {}) }}</p>
+            <button class="mt-4 rounded-xl bg-cacao-ink px-4 py-2.5 text-sm font-extrabold text-white transition hover:bg-cacao-roast" type="button" (click)="loadRecords()">{{ i18n.t('dashboard.admin.actions.tryAgain') }}</button>
+          </div>
+        } @else if (records().length === 0) {
+          <div class="px-6 py-14 text-center sm:px-8">
+            <span class="mx-auto grid size-11 place-items-center rounded-2xl bg-cacao-pale text-cacao-roast">
+              <svg class="size-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 5h12M6 12h12M6 19h12" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+            </span>
+            <p class="mt-4 font-bold text-cacao-brown">{{ i18n.t('dashboard.admin.management.noRecords') }}</p>
+          </div>
+        } @else {
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-cacao-gold/20 text-left">
+              <thead class="bg-cacao-cream/70">
+                <tr>
+                  @for (column of currentTable.columns; track column.key) {
+                    <th class="whitespace-nowrap px-5 py-3.5 text-[0.66rem] font-extrabold uppercase tracking-[0.12em] text-cacao-brown/75 sm:px-6" scope="col">{{ i18n.t(column.labelKey) }}</th>
+                  }
+                  @if (currentTable.editFields || currentTable.removeActionKey) {
+                    <th class="px-5 py-3.5 text-right text-[0.66rem] font-extrabold uppercase tracking-[0.12em] text-cacao-brown/75 sm:px-6" scope="col">{{ i18n.t('dashboard.admin.columns.actions') }}</th>
+                  }
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-cacao-gold/15">
+                @for (record of records(); track recordId(record)) {
+                  <tr class="align-top transition hover:bg-cacao-cream/45">
+                    @for (column of currentTable.columns; track column.key) {
+                      <td class="max-w-64 px-5 py-4 text-sm leading-5 text-cacao-ink sm:px-6" [class.font-mono]="column.compact" [class.text-xs]="column.compact">
+                        @if (column.format === 'status') {
+                          <span [class]="'inline-flex rounded-full px-2.5 py-1 text-[0.65rem] font-extrabold tracking-[0.06em] ' + statusClass(recordValue(record, column.key))">{{ formatValue(recordValue(record, column.key), column) }}</span>
+                        } @else {
+                          <span class="break-words">{{ formatValue(recordValue(record, column.key), column) }}</span>
+                        }
+                      </td>
+                    }
+                    @if (currentTable.editFields || currentTable.removeActionKey) {
+                      <td class="px-5 py-3.5 sm:px-6">
+                        <div class="flex justify-end gap-2">
+                          @if (currentTable.editFields) {
+                            <button class="rounded-lg border border-cacao-gold/35 bg-white px-3 py-2 text-xs font-extrabold text-cacao-roast transition hover:bg-cacao-pale disabled:cursor-not-allowed disabled:opacity-60" type="button" [disabled]="isSaving() || isLoadingLookups()" (click)="openEdit(record)">{{ i18n.t('dashboard.admin.actions.edit') }}</button>
+                          }
+                          @if (currentTable.removeActionKey && canRemove(record)) {
+                            <button class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-extrabold text-red-800 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60" type="button" [disabled]="removingRecordId() !== null" (click)="askToRemove(record)">
+                              @if (isRecordBeingRemoved(record)) { <span class="mr-1 inline-block size-3 animate-spin rounded-full border-2 border-current border-r-transparent"></span> }
+                              {{ i18n.t(currentTable.removeActionKey) }}
+                            </button>
+                          }
+                        </div>
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </article>
+    </div>
+  }
+</section>

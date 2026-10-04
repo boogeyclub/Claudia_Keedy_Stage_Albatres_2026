@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?PowerDesigner signature="Workspace" version="15.1.0.2850"?>
+<!-- Veuillez ne pas modifier ce fichier -->
+
+<Workspace>
+	<Local Expanded="Yes">
+		<Model Expanded="Yes" ID="{A7641466-69C7-43EE-9221-F5F5536F94A9}" Name="PROJET_ANALYSE_POWERAMC_STAGE" Type="{FF4B6538-9856-42CF-B9B9-304ED370CEAA}" URL="PROJET_ANALYSE_POWERAMC_STAGE/PROJET_ANALYSE_POWERAMC_STAGE.prj"/>
+	</Local>
+	<BrowserModule Name="Référentiel"/>
+</Workspace>

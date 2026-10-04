@@ -1,0 +1,102 @@
+<section class="relative isolate overflow-hidden">
+  <div class="pointer-events-none absolute -right-28 top-0 size-80 rounded-full bg-cacao-yellow/30 blur-3xl"></div>
+  <div class="pointer-events-none absolute -left-28 bottom-0 size-72 rounded-full bg-cacao-gold/20 blur-3xl"></div>
+
+  <div class="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-11 lg:px-8 lg:py-14">
+    <span class="inline-flex items-center gap-2 rounded-full bg-cacao-pale px-3 py-1.5 text-[0.68rem] font-extrabold uppercase tracking-[0.16em] text-cacao-roast">
+      <span class="size-1.5 rounded-full bg-cacao-amber"></span>
+      {{ i18n.t('dashboard.account.eyebrow') }}
+    </span>
+    <h1 class="mt-5 max-w-2xl text-3xl font-black leading-tight tracking-[-0.055em] text-cacao-ink sm:text-5xl">{{ i18n.t('dashboard.account.title') }}</h1>
+    <p class="mt-4 max-w-2xl text-base leading-7 text-cacao-brown sm:text-lg">{{ i18n.t('dashboard.account.description') }}</p>
+
+    @if (user(); as currentUser) {
+      <div class="mt-8 grid gap-7 xl:grid-cols-[.72fr_1.28fr]">
+        <article class="h-fit overflow-hidden rounded-[2rem] border border-cacao-gold/25 bg-white shadow-[0_14px_38px_rgba(59,33,23,0.08)]">
+          <div class="bg-cacao-ink p-7 text-white sm:p-8">
+            <span class="grid size-14 place-items-center rounded-2xl bg-cacao-yellow text-lg font-black text-cacao-ink">
+              {{ currentUser.prenom.charAt(0) }}{{ currentUser.nom.charAt(0) }}
+            </span>
+            <p class="mt-5 text-xs font-extrabold uppercase tracking-[0.16em] text-cacao-yellow">{{ i18n.t('dashboard.account.profileTitle') }}</p>
+            <h2 class="mt-2 text-2xl font-black tracking-[-0.04em]">{{ currentUser.prenom }} {{ currentUser.nom }}</h2>
+            <p class="mt-2 text-sm text-cacao-cream/75">{{ i18n.t(roleTranslationKeyFor(currentUser.role)) }}</p>
+          </div>
+
+          <dl class="divide-y divide-cacao-gold/20 p-3">
+            <div class="px-3 py-4">
+              <dt class="text-[0.67rem] font-extrabold uppercase tracking-[0.13em] text-cacao-brown/65">{{ i18n.t('dashboard.account.email') }}</dt>
+              <dd class="mt-1 break-all font-bold text-cacao-ink">{{ currentUser.email }}</dd>
+            </div>
+            <div class="px-3 py-4">
+              <dt class="text-[0.67rem] font-extrabold uppercase tracking-[0.13em] text-cacao-brown/65">{{ i18n.t('dashboard.account.login') }}</dt>
+              <dd class="mt-1 font-bold text-cacao-ink">{{ currentUser.login }}</dd>
+            </div>
+            <div class="px-3 py-4">
+              <dt class="text-[0.67rem] font-extrabold uppercase tracking-[0.13em] text-cacao-brown/65">{{ i18n.t('dashboard.account.role') }}</dt>
+              <dd class="mt-1 font-bold text-cacao-ink">{{ i18n.t(roleTranslationKeyFor(currentUser.role)) }}</dd>
+            </div>
+          </dl>
+        </article>
+
+        <article class="overflow-hidden rounded-[2rem] border border-cacao-gold/25 bg-white shadow-[0_14px_38px_rgba(59,33,23,0.08)]">
+          <div class="flex flex-col gap-4 border-b border-cacao-gold/20 px-6 py-6 sm:flex-row sm:items-start sm:justify-between sm:px-8">
+            <div>
+              <div class="flex items-center gap-3">
+                <span class="grid size-10 place-items-center rounded-2xl bg-cacao-pale text-cacao-roast">
+                  <svg class="size-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 20h7M12 16.5V20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                </span>
+                <h2 class="text-xl font-black tracking-[-0.04em] text-cacao-ink">{{ i18n.t('dashboard.account.sessionsTitle') }}</h2>
+              </div>
+              <p class="mt-3 max-w-2xl leading-6 text-cacao-brown">{{ i18n.t('dashboard.account.sessionsDescription') }}</p>
+            </div>
+            <button class="inline-flex shrink-0 items-center justify-center rounded-xl border border-cacao-gold/35 bg-cacao-cream px-3.5 py-2.5 text-sm font-extrabold text-cacao-roast transition hover:bg-cacao-pale disabled:cursor-not-allowed disabled:opacity-60" type="button" [disabled]="isLoadingSessions()" (click)="loadSessions()">
+              <svg class="mr-2 size-4" [class.animate-spin]="isLoadingSessions()" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              {{ i18n.t('dashboard.account.refreshSessions') }}
+            </button>
+          </div>
+
+          <div class="p-4 sm:p-6">
+            @if (isLoadingSessions()) {
+              <div class="flex min-h-40 items-center justify-center gap-3 rounded-2xl bg-cacao-cream/70 px-5 text-sm font-bold text-cacao-brown">
+                <span class="size-5 animate-spin rounded-full border-2 border-cacao-amber border-r-transparent"></span>
+                {{ i18n.t('dashboard.account.loadingSessions') }}
+              </div>
+            } @else if (sessions().length === 0) {
+              <div class="rounded-2xl border border-dashed border-cacao-gold/40 bg-cacao-cream/60 px-5 py-10 text-center text-sm font-semibold text-cacao-brown">
+                {{ i18n.t('dashboard.account.noSessions') }}
+              </div>
+            } @else {
+              <div class="space-y-3">
+                @for (session of sessions(); track session.id) {
+                  <article class="rounded-2xl border p-4 transition" [class.border-cacao-gold]="session.current" [class.bg-cacao-pale]="session.current" [class.border-cacao-sand]="!session.current" [class.bg-cacao-cream]="!session.current">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                          <h3 class="font-extrabold text-cacao-ink">{{ session.browserLabel }}</h3>
+                          @if (session.current) {
+                            <span class="rounded-full bg-cacao-ink px-2.5 py-1 text-[0.65rem] font-extrabold uppercase tracking-[0.1em] text-cacao-yellow">{{ i18n.t('dashboard.account.current') }}</span>
+                          }
+                          <span class="rounded-full px-2.5 py-1 text-[0.65rem] font-extrabold uppercase tracking-[0.1em]" [class.bg-cacao-pale]="session.rememberMe" [class.text-cacao-roast]="session.rememberMe" [class.bg-white]="!session.rememberMe" [class.text-cacao-brown]="!session.rememberMe">
+                            {{ i18n.t(session.rememberMe ? 'dashboard.account.remembered' : 'dashboard.account.standard') }}
+                          </span>
+                        </div>
+                        <p class="mt-2 text-xs leading-5 text-cacao-brown">{{ i18n.t('dashboard.account.lastActive', { time: formattedDate(session.lastSeenAt) }) }}</p>
+                        <p class="text-xs leading-5 text-cacao-brown">{{ i18n.t('dashboard.account.expires', { time: formattedDate(session.expiresAt) }) }}</p>
+                      </div>
+                      <button class="inline-flex shrink-0 items-center justify-center rounded-xl border px-3.5 py-2.5 text-sm font-extrabold transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60" [class.border-red-200]="!session.current" [class.bg-white]="!session.current" [class.text-red-700]="!session.current" [class.border-cacao-ink]="session.current" [class.bg-cacao-ink]="session.current" [class.text-white]="session.current" type="button" [disabled]="disconnectingSessionId() !== null" (click)="disconnect(session)">
+                        @if (disconnectingSessionId() === session.id) {
+                          <span class="mr-2 size-4 animate-spin rounded-full border-2 border-current border-r-transparent"></span>
+                        }
+                        {{ i18n.t(session.current ? 'dashboard.account.disconnectCurrent' : 'dashboard.account.disconnect') }}
+                      </button>
+                    </div>
+                  </article>
+                }
+              </div>
+            }
+          </div>
+        </article>
+      </div>
+    }
+  </div>
+</section>

@@ -1,0 +1,37 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-cacao-ink: #3b2117;
+  --color-cacao-deep: #24130e;
+  --color-cacao-roast: #653c25;
+  --color-cacao-brown: #805333;
+  --color-cacao-amber: #c46b22;
+  --color-cacao-gold: #f3b936;
+  --color-cacao-yellow: #ffd76a;
+  --color-cacao-sand: #f6dfa2;
+  --color-cacao-pale: #fff0c4;
+  --color-cacao-cream: #fff8e7;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-width: 320px;
+    margin: 0;
+    background: var(--color-cacao-cream);
+    color: var(--color-cacao-ink);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  ::selection {
+    background: var(--color-cacao-yellow);
+    color: var(--color-cacao-deep);
+  }
+}

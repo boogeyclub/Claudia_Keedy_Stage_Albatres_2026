@@ -1,0 +1,92 @@
+# ---------------------------------------------------------------------------
+# Repository-wide ignore rules.
+#
+# This is a monorepo with a Spring Boot back end and an Angular front end.
+# Component-specific rules intentionally live next to each project:
+#   Front-End/.gitignore
+#   Back-End/service-connectmarket/.gitignore
+# ---------------------------------------------------------------------------
+
+# --- Environment & secrets -------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+secrets.*
+
+# Local/overriding Spring profiles (keep application.properties tracked)
+application-local.*
+application-dev-local.*
+application-prod.properties
+application-prod.yml
+application-prod.yaml
+application-secret.*
+
+# --- Logs ------------------------------------------------------------------
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Node / Angular --------------------------------------------------------
+node_modules/
+dist/
+out-tsc/
+bazel-out/
+.angular/
+.sass-cache/
+coverage/
+.nyc_output/
+.vite/
+*.tsbuildinfo
+
+# --- Java / Maven ----------------------------------------------------------
+target/
+build/
+out/
+*.class
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+.mtj.tmp/
+.mvn/wrapper/maven-wrapper.jar
+
+# --- IDEs & editors --------------------------------------------------------
+.idea/
+*.iws
+*.iml
+*.ipr
+.project
+.classpath
+.settings/
+.apt_generated
+.factorypath
+.springBeans
+.sts4-cache
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/mcp.json
+*.swp
+*.swo
+*~
+
+# --- OS --------------------------------------------------------------------
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/

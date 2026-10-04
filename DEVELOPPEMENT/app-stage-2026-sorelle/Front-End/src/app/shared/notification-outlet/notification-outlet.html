@@ -1,0 +1,64 @@
+<section
+  class="pointer-events-none fixed inset-x-4 top-4 z-50 mx-auto flex max-w-md flex-col gap-3 sm:left-auto sm:right-6 sm:mx-0"
+  [attr.aria-label]="i18n.t('notifications.outletAria')"
+  aria-live="polite"
+  aria-atomic="false"
+>
+  @for (notification of notificationService.notifications(); track notification.id) {
+    <article
+      class="pointer-events-auto relative flex items-start gap-3 overflow-hidden rounded-2xl border bg-white p-4 pr-11 shadow-[0_18px_45px_rgba(59,33,23,0.18)]"
+      [class.border-emerald-300]="notification.kind === 'success'"
+      [class.border-red-300]="notification.kind === 'error'"
+      [class.border-amber-300]="notification.kind === 'warning'"
+      [class.border-sky-300]="notification.kind === 'info' || notification.kind === 'loading'"
+      [attr.role]="roleFor(notification.kind)"
+    >
+      <span
+        class="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full"
+        [class.bg-emerald-100]="notification.kind === 'success'"
+        [class.text-emerald-700]="notification.kind === 'success'"
+        [class.bg-red-100]="notification.kind === 'error'"
+        [class.text-red-700]="notification.kind === 'error'"
+        [class.bg-amber-100]="notification.kind === 'warning'"
+        [class.text-amber-700]="notification.kind === 'warning'"
+        [class.bg-sky-100]="notification.kind === 'info' || notification.kind === 'loading'"
+        [class.text-sky-700]="notification.kind === 'info' || notification.kind === 'loading'"
+        aria-hidden="true"
+      >
+        @switch (notification.kind) {
+          @case ('success') {
+            <svg class="size-4" viewBox="0 0 24 24" fill="none"><path d="m5 12 4.5 4.5L19 7" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          }
+          @case ('error') {
+            <svg class="size-4" viewBox="0 0 24 24" fill="none"><path d="M12 8v4m0 4h.01M10.3 3.9 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          }
+          @case ('warning') {
+            <svg class="size-4" viewBox="0 0 24 24" fill="none"><path d="M12 8v4m0 4h.01M10.3 3.9 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          }
+          @case ('loading') {
+            <span class="size-4 animate-spin rounded-full border-2 border-current border-r-transparent"></span>
+          }
+          @default {
+            <svg class="size-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.9"/><path d="M12 10.6V16m0-8.7h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          }
+        }
+      </span>
+
+      <div class="min-w-0 pt-0.5">
+        <p class="text-sm font-extrabold text-cacao-ink">{{ i18n.t('notifications.types.' + notification.kind) }}</p>
+        <p class="mt-1 text-sm leading-5 text-cacao-brown">{{ i18n.t(notification.key, notification.params) }}</p>
+      </div>
+
+      @if (notification.dismissible) {
+        <button
+          class="absolute right-2 top-2 grid size-8 place-items-center rounded-xl text-cacao-brown transition hover:bg-cacao-cream hover:text-cacao-ink focus:outline-none focus:ring-2 focus:ring-cacao-gold"
+          type="button"
+          (click)="notificationService.dismiss(notification.id)"
+          [attr.aria-label]="i18n.t('notifications.dismiss')"
+        >
+          <svg class="size-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      }
+    </article>
+  }
+</section>

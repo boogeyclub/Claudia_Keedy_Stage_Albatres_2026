@@ -1,0 +1,274 @@
+<div class="min-h-screen overflow-x-hidden bg-cacao-cream text-cacao-ink">
+  <header class="sticky top-0 z-50 border-b border-cacao-gold/35 bg-cacao-cream/92 backdrop-blur">
+    <div class="mx-auto flex h-20 max-w-7xl items-center justify-between gap-5 px-5 sm:px-8 lg:px-10">
+      <a class="group inline-flex items-center gap-3" href="./" [attr.aria-label]="i18n.t('common.homeAria')">
+        <span class="grid size-10 place-items-center rounded-2xl bg-cacao-ink shadow-[0_8px_24px_rgba(59,33,23,0.22)] transition-transform duration-300 group-hover:-rotate-6">
+          <svg class="size-6 text-cacao-yellow" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 21c4.6-2.4 7-6.1 7-10.1C19 6.8 16.1 4 12 4S5 6.8 5 10.9C5 14.9 7.4 18.6 12 21Z" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M12 5v14M8.2 9.1c1.2.8 2.5 1.2 3.8 1.2s2.6-.4 3.8-1.2M7.5 14.2c1.5.9 3 1.4 4.5 1.4s3-.5 4.5-1.4" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="leading-none">
+          <span class="block text-[1.05rem] font-extrabold tracking-[-0.04em] text-cacao-ink">{{ i18n.t('common.brandName') }}</span>
+          <span class="mt-1 block text-[0.62rem] font-bold uppercase tracking-[0.18em] text-cacao-brown/80">{{ i18n.t('landing.brandTagline') }}</span>
+        </span>
+      </a>
+
+      <nav class="hidden items-center gap-7 text-sm font-semibold text-cacao-brown lg:flex" [attr.aria-label]="i18n.t('common.primaryNavigation')">
+        <a class="transition-colors hover:text-cacao-ink" href="#how-it-works">{{ i18n.t('landing.navigation.howItWorks') }}</a>
+        <a class="transition-colors hover:text-cacao-ink" href="#for-farmers">{{ i18n.t('landing.navigation.forFarmers') }}</a>
+        <a class="transition-colors hover:text-cacao-ink" href="#for-buyers">{{ i18n.t('landing.navigation.forBuyers') }}</a>
+        <a class="transition-colors hover:text-cacao-ink" href="#why-cacaomarket">{{ i18n.t('landing.navigation.whyCacaoMarketCM') }}</a>
+      </nav>
+
+      <div class="flex items-center gap-2 sm:gap-3">
+        <a class="hidden text-sm font-extrabold text-cacao-roast transition hover:text-cacao-ink sm:inline" routerLink="/login">{{ i18n.t('landing.actions.signIn') }}</a>
+        <app-language-switcher />
+        <a class="hidden items-center justify-center rounded-full bg-cacao-gold px-4 py-2.5 text-sm font-bold text-cacao-ink shadow-[0_8px_18px_rgba(59,33,23,0.16)] transition hover:-translate-y-0.5 hover:bg-cacao-yellow sm:inline-flex sm:px-5" routerLink="/registration">
+          {{ i18n.t('landing.actions.joinMarket') }}
+          <svg class="ml-2 size-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="relative isolate overflow-hidden">
+      <div class="pointer-events-none absolute -left-28 top-8 size-72 rounded-full bg-cacao-yellow/45 blur-3xl"></div>
+      <div class="pointer-events-none absolute right-0 top-0 size-96 translate-x-1/3 -translate-y-1/3 rounded-full bg-cacao-gold/35 blur-3xl"></div>
+      <div class="mx-auto grid max-w-7xl gap-12 px-5 pb-20 pt-14 sm:px-8 sm:pb-24 sm:pt-20 lg:grid-cols-[1.02fr_.98fr] lg:items-center lg:gap-16 lg:px-10 lg:pb-28 lg:pt-24">
+        <div class="relative z-10 max-w-2xl">
+          <div class="inline-flex items-center gap-2 rounded-full border border-cacao-ink/10 bg-white/80 px-3.5 py-2 text-xs font-bold tracking-wide text-cacao-roast shadow-sm">
+            <span class="size-2 rounded-full bg-cacao-gold shadow-[0_0_0_4px_rgba(243,185,54,0.26)]"></span>
+            {{ i18n.t('landing.hero.badge') }}
+          </div>
+          <h1 data-testid="landing-title" class="mt-6 max-w-xl text-5xl font-black leading-[0.98] tracking-[-0.065em] text-cacao-ink sm:text-6xl lg:text-7xl">
+            {{ i18n.t('landing.hero.titleStart') }}
+            <span class="relative inline-block text-cacao-amber">
+              {{ i18n.t('landing.hero.titleAccent') }}
+              <svg class="absolute -bottom-2 left-0 h-3 w-full text-cacao-gold" viewBox="0 0 240 18" fill="none" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M2 13.5C54 2.3 126 2.3 238 5.5" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+              </svg>
+            </span>
+          </h1>
+          <p class="mt-7 max-w-xl text-lg leading-8 text-cacao-brown sm:text-xl">
+            {{ i18n.t('landing.hero.description') }}
+          </p>
+
+          <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+            <a class="group inline-flex items-center justify-center rounded-full bg-cacao-gold px-6 py-3.5 text-sm font-bold text-cacao-ink shadow-[0_12px_24px_rgba(59,33,23,0.2)] transition hover:-translate-y-0.5 hover:bg-cacao-yellow" routerLink="/registration">
+              {{ i18n.t('landing.actions.listBatch') }}
+              <svg class="ml-2 size-4 transition-transform group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+            <a class="inline-flex items-center justify-center rounded-full border border-cacao-gold/65 bg-white px-6 py-3.5 text-sm font-bold text-cacao-ink transition hover:border-cacao-ink hover:bg-cacao-cream" routerLink="/registration">
+              {{ i18n.t('landing.actions.sourceCocoa') }}
+            </a>
+          </div>
+
+          <ul class="mt-8 grid gap-3 text-sm font-medium text-cacao-brown sm:grid-cols-3">
+            <li class="flex items-center gap-2">
+              <span class="grid size-5 shrink-0 place-items-center rounded-full bg-cacao-pale text-cacao-roast">
+                <svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m3.4 8.2 2.7 2.7 6.4-6.2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              {{ i18n.t('landing.hero.largeBatchFocus') }}
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="grid size-5 shrink-0 place-items-center rounded-full bg-cacao-pale text-cacao-roast">
+                <svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m3.4 8.2 2.7 2.7 6.4-6.2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              {{ i18n.t('landing.hero.betterBriefings') }}
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="grid size-5 shrink-0 place-items-center rounded-full bg-cacao-pale text-cacao-roast">
+                <svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m3.4 8.2 2.7 2.7 6.4-6.2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              {{ i18n.t('landing.hero.directDialogue') }}
+            </li>
+          </ul>
+        </div>
+
+        <div class="relative mx-auto w-full max-w-xl lg:max-w-none">
+          <div class="absolute -inset-5 -z-10 rounded-[2.5rem] bg-cacao-pale opacity-80 blur-2xl"></div>
+          <div class="overflow-hidden rounded-[2rem] border border-white/70 bg-cacao-ink p-2 shadow-[0_28px_70px_rgba(59,33,23,0.26)] sm:rounded-[2.5rem]">
+            <div class="relative min-h-[31rem] overflow-hidden rounded-[1.6rem] sm:rounded-[2rem]">
+              <img class="absolute inset-0 size-full object-cover" src="images/cacaomarket-hero.jpg" [alt]="i18n.t('landing.hero.imageAlt')">
+              <div class="absolute inset-0 bg-gradient-to-t from-cacao-deep/90 via-cacao-ink/15 to-cacao-ink/5"></div>
+              <div class="absolute inset-0 bg-gradient-to-br from-cacao-gold/25 via-transparent to-transparent mix-blend-screen"></div>
+              <div class="absolute inset-x-0 top-0 flex items-center justify-between p-5 sm:p-6">
+                <span class="inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-2 text-xs font-extrabold text-cacao-ink shadow-lg">
+                  <span class="size-2 rounded-full bg-cacao-gold"></span>
+                  {{ i18n.t('landing.hero.marketReadyLot') }}
+                </span>
+                <span class="rounded-full bg-cacao-gold/95 px-3 py-2 text-xs font-bold text-cacao-ink backdrop-blur">{{ i18n.t('landing.hero.cocoaInVolume') }}</span>
+              </div>
+              <div class="absolute inset-x-0 bottom-0 p-5 text-white sm:p-7">
+                <p class="text-xs font-bold uppercase tracking-[0.2em] text-cacao-yellow">{{ i18n.t('landing.hero.clearerStartingPoint') }}</p>
+                <div class="mt-3 flex items-end justify-between gap-4">
+                  <div>
+                    <p class="text-2xl font-black tracking-[-0.04em] sm:text-3xl">{{ i18n.t('landing.hero.fromHarvestToMarket') }}</p>
+                    <p class="mt-1 text-sm text-cacao-sand">{{ i18n.t('landing.hero.harvestMarketDescription') }}</p>
+                  </div>
+                  <span class="hidden rounded-2xl bg-white/15 px-3 py-2 text-xs font-bold backdrop-blur sm:block">{{ i18n.t('common.brandName') }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div data-testid="hero-volume-visibility-card" class="mt-5 max-w-[15rem] rounded-2xl border border-cacao-gold/25 bg-white p-4 shadow-[0_16px_40px_rgba(93,53,25,0.18)] sm:ml-5 sm:mt-6 sm:p-5">
+            <div class="flex items-center gap-3">
+              <span class="grid size-10 place-items-center rounded-xl bg-cacao-sand text-cacao-amber">
+                <svg class="size-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 19V9m6 10V5m6 14v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4 19h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </span>
+              <div>
+                <p class="text-xs font-bold uppercase tracking-[0.13em] text-cacao-brown/65">{{ i18n.t('landing.hero.tradeBeginsWith') }}</p>
+                <p class="mt-0.5 text-sm font-extrabold text-cacao-ink">{{ i18n.t('landing.hero.volumeAndVisibility') }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="relative z-10 border-y border-cacao-gold/25 bg-white">
+      <div class="mx-auto grid max-w-7xl divide-y divide-cacao-gold/30 px-5 sm:px-8 md:grid-cols-3 md:divide-x md:divide-y-0 lg:px-10">
+        <div class="flex items-center gap-4 py-6 md:py-7">
+          <span class="grid size-11 place-items-center rounded-2xl bg-cacao-pale text-cacao-roast">
+            <svg class="size-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 19V8l8-4 8 4v11M4 19h16M8 19v-6h8v6" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          </span>
+          <div><p class="font-bold text-cacao-ink">{{ i18n.t('landing.highlights.lotBasedTitle') }}</p><p class="mt-0.5 text-sm text-cacao-brown/80">{{ i18n.t('landing.highlights.lotBasedDescription') }}</p></div>
+        </div>
+        <div class="flex items-center gap-4 py-6 md:px-7 md:py-7">
+          <span class="grid size-11 place-items-center rounded-2xl bg-cacao-pale text-cacao-amber">
+            <svg class="size-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21c4.4-2.5 7-6.2 7-10.1A7 7 0 0 0 5 11c0 3.9 2.6 7.6 7 10Z" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12.2 11 14.7l4.7-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <div><p class="font-bold text-cacao-ink">{{ i18n.t('landing.highlights.discoveryTitle') }}</p><p class="mt-0.5 text-sm text-cacao-brown/80">{{ i18n.t('landing.highlights.discoveryDescription') }}</p></div>
+        </div>
+        <div class="flex items-center gap-4 py-6 md:py-7 md:pl-7">
+          <span class="grid size-11 place-items-center rounded-2xl bg-cacao-pale text-cacao-roast">
+            <svg class="size-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 12h10M12 7v10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.8"/></svg>
+          </span>
+          <div><p class="font-bold text-cacao-ink">{{ i18n.t('landing.highlights.firstStepTitle') }}</p><p class="mt-0.5 text-sm text-cacao-brown/80">{{ i18n.t('landing.highlights.firstStepDescription') }}</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="why-cacaomarket" class="scroll-mt-24 py-20 sm:py-28">
+      <div class="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+        <div class="max-w-2xl">
+          <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-cacao-amber">{{ i18n.t('landing.value.eyebrow') }}</p>
+          <h2 class="mt-4 text-3xl font-black tracking-[-0.05em] text-cacao-ink sm:text-5xl">{{ i18n.t('landing.value.title') }}</h2>
+          <p class="mt-5 text-lg leading-8 text-cacao-brown">{{ i18n.t('landing.value.description') }}</p>
+        </div>
+
+        <div class="mt-12 grid gap-5 md:grid-cols-3">
+          @for (advantage of marketAdvantages; track advantage.titleKey) {
+            <article class="group rounded-[1.75rem] border border-cacao-gold/25 bg-white p-7 transition duration-300 hover:-translate-y-1 hover:border-cacao-gold hover:shadow-[0_18px_45px_rgba(128,83,51,0.13)]">
+              <span class="grid size-12 place-items-center rounded-2xl bg-cacao-pale text-cacao-roast">
+                @switch (advantage.icon) {
+                  @case ('layers') {
+                    <svg class="size-6" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 4 8 4-8 4-8-4 8-4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m4 12 8 4 8-4M4 16l8 4 8-4" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                  }
+                  @case ('signal') {
+                    <svg class="size-6" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 19v-4m5 4V9m5 10V5m5 14v-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M3 19h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  }
+                  @default {
+                    <svg class="size-6" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 12h8M12 8v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M7.5 6.5 4 10l3.5 3.5M16.5 6.5 20 10l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 14.5 7.5 18l3.5-3.5M13 14.5l3.5 3.5L20 14.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  }
+                }
+              </span>
+              <h3 class="mt-7 text-xl font-extrabold tracking-[-0.03em] text-cacao-ink">{{ i18n.t(advantage.titleKey) }}</h3>
+              <p class="mt-3 leading-7 text-cacao-brown">{{ i18n.t(advantage.descriptionKey) }}</p>
+              <span class="mt-6 inline-flex items-center text-sm font-bold text-cacao-roast">{{ i18n.t('landing.value.designedForTrade') }} <span class="ml-2 transition-transform group-hover:translate-x-1">→</span></span>
+            </article>
+          }
+        </div>
+      </div>
+    </section>
+
+    <section id="how-it-works" class="scroll-mt-24 bg-cacao-ink py-20 text-white sm:py-28">
+      <div class="mx-auto grid max-w-7xl gap-14 px-5 sm:px-8 lg:grid-cols-[.8fr_1.2fr] lg:gap-24 lg:px-10">
+        <div>
+          <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-cacao-yellow">{{ i18n.t('landing.process.eyebrow') }}</p>
+          <h2 class="mt-4 max-w-md text-3xl font-black tracking-[-0.05em] sm:text-5xl">{{ i18n.t('landing.process.title') }}</h2>
+          <p class="mt-6 max-w-md text-lg leading-8 text-cacao-cream/80">{{ i18n.t('landing.process.description') }}</p>
+          <a class="mt-8 inline-flex items-center rounded-full border border-white/25 px-5 py-3 text-sm font-bold text-white transition hover:border-cacao-yellow hover:bg-white/10" routerLink="/registration">{{ i18n.t('landing.actions.seeWhereYouFit') }} <span class="ml-2">↓</span></a>
+        </div>
+
+        <ol class="space-y-4">
+          @for (step of journeySteps; track step.number) {
+            <li class="group rounded-3xl border border-white/10 bg-white/[0.06] p-6 transition hover:border-cacao-yellow/50 hover:bg-white/[0.09] sm:flex sm:gap-7 sm:p-7">
+              <span class="text-4xl font-black tracking-[-0.07em] text-cacao-yellow sm:text-5xl">{{ step.number }}</span>
+              <div class="mt-4 sm:mt-1">
+                <h3 class="text-xl font-extrabold tracking-[-0.03em]">{{ i18n.t(step.titleKey) }}</h3>
+                <p class="mt-2 max-w-xl leading-7 text-cacao-cream/80">{{ i18n.t(step.descriptionKey) }}</p>
+              </div>
+            </li>
+          }
+        </ol>
+      </div>
+    </section>
+
+    <section class="py-20 sm:py-28">
+      <div class="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+        <div class="grid gap-6 lg:grid-cols-2">
+          <article id="for-farmers" class="scroll-mt-24 relative overflow-hidden rounded-[2rem] bg-cacao-sand p-8 sm:p-10">
+            <div class="absolute -right-10 -top-10 size-44 rounded-full border-[18px] border-cacao-gold/25"></div>
+            <div class="relative max-w-md">
+              <span class="inline-flex rounded-full bg-white/70 px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.14em] text-cacao-amber">{{ i18n.t('landing.farmers.eyebrow') }}</span>
+              <h2 class="mt-5 text-3xl font-black tracking-[-0.05em] text-cacao-ink sm:text-4xl">{{ i18n.t('landing.farmers.title') }}</h2>
+              <p class="mt-5 leading-7 text-cacao-brown">{{ i18n.t('landing.farmers.description') }}</p>
+              <a class="mt-7 inline-flex items-center rounded-full bg-cacao-amber px-5 py-3 text-sm font-bold text-white transition hover:bg-cacao-roast" routerLink="/registration">{{ i18n.t('landing.farmers.action') }} <span class="ml-2">→</span></a>
+            </div>
+          </article>
+
+          <article id="for-buyers" class="scroll-mt-24 relative overflow-hidden rounded-[2rem] bg-cacao-pale p-8 sm:p-10">
+            <div class="absolute -bottom-12 -right-8 size-52 rounded-full border-[18px] border-cacao-gold/25"></div>
+            <div class="relative max-w-md">
+              <span class="inline-flex rounded-full bg-white/75 px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.14em] text-cacao-roast">{{ i18n.t('landing.buyers.eyebrow') }}</span>
+              <h2 class="mt-5 text-3xl font-black tracking-[-0.05em] text-cacao-ink sm:text-4xl">{{ i18n.t('landing.buyers.title') }}</h2>
+              <p class="mt-5 leading-7 text-cacao-brown">{{ i18n.t('landing.buyers.description') }}</p>
+              <a class="mt-7 inline-flex items-center rounded-full bg-cacao-ink px-5 py-3 text-sm font-bold text-white transition hover:bg-cacao-roast" routerLink="/registration">{{ i18n.t('landing.buyers.action') }} <span class="ml-2">→</span></a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="get-started" class="scroll-mt-24 pb-20 sm:pb-28">
+      <div class="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+        <div class="relative overflow-hidden rounded-[2rem] bg-cacao-ink px-6 py-12 text-center text-white shadow-[0_24px_55px_rgba(59,33,23,0.22)] sm:px-12 sm:py-16">
+          <div class="absolute left-1/2 top-0 size-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cacao-gold/15 blur-3xl"></div>
+          <div class="relative mx-auto max-w-2xl">
+            <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-cacao-yellow">{{ i18n.t('landing.finalCta.eyebrow') }}</p>
+            <h2 class="mt-4 text-3xl font-black tracking-[-0.05em] sm:text-5xl">{{ i18n.t('landing.finalCta.title') }}</h2>
+            <p class="mt-5 text-lg leading-8 text-cacao-cream/80">{{ i18n.t('landing.finalCta.description') }}</p>
+            <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+              <a class="inline-flex items-center justify-center rounded-full bg-cacao-yellow px-6 py-3.5 text-sm font-extrabold text-cacao-ink transition hover:-translate-y-0.5 hover:bg-cacao-pale" routerLink="/registration">{{ i18n.t('landing.actions.growCocoa') }}</a>
+              <a class="inline-flex items-center justify-center rounded-full border border-white/25 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white/10" routerLink="/registration">{{ i18n.t('landing.actions.sourceCocoaShort') }}</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-cacao-gold/25 bg-white">
+    <div class="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-9 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-10">
+      <a class="inline-flex items-center gap-2" href="./" [attr.aria-label]="i18n.t('common.homeAria')">
+        <span class="grid size-8 place-items-center rounded-xl bg-cacao-ink text-cacao-yellow">
+          <svg class="size-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21c4.6-2.4 7-6.1 7-10.1C19 6.8 16.1 4 12 4S5 6.8 5 10.9C5 14.9 7.4 18.6 12 21Z" stroke="currentColor" stroke-width="2"/><path d="M12 5v14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </span>
+        <span class="font-extrabold tracking-[-0.04em] text-cacao-ink">{{ i18n.t('common.brandName') }}</span>
+      </a>
+      <p class="text-sm text-cacao-brown/80">{{ i18n.t('landing.footer.description') }}</p>
+      <div class="flex gap-5 text-sm font-semibold text-cacao-brown/80">
+        <a class="hover:text-cacao-ink" href="#for-farmers">{{ i18n.t('landing.footer.farmers') }}</a>
+        <a class="hover:text-cacao-ink" href="#for-buyers">{{ i18n.t('landing.footer.buyers') }}</a>
+        <a class="hover:text-cacao-ink" href="#why-cacaomarket">{{ i18n.t('landing.footer.about') }}</a>
+      </div>
+    </div>
+  </footer>
+</div>

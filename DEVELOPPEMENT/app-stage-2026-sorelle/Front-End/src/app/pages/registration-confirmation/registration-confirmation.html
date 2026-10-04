@@ -1,0 +1,79 @@
+<div class="min-h-screen bg-cacao-cream text-cacao-ink">
+  <header class="border-b border-cacao-gold/20 bg-white/85 backdrop-blur">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8 lg:px-12">
+      <a class="inline-flex items-center gap-3" routerLink="/" [attr.aria-label]="i18n.t('common.homeAria')">
+        <span class="grid size-10 place-items-center rounded-xl bg-cacao-ink text-lg font-black text-cacao-yellow">C</span>
+        <span>
+          <span class="block text-lg font-black tracking-[-0.04em] text-cacao-ink">{{ i18n.t('common.brandName') }}</span>
+          <span class="block text-[0.65rem] font-bold uppercase tracking-[0.16em] text-cacao-brown">{{ i18n.t('auth.shared.secureAccess') }}</span>
+        </span>
+      </a>
+      <app-language-switcher />
+    </div>
+  </header>
+
+  <main class="mx-auto flex min-h-[calc(100vh-5.5rem)] max-w-7xl items-center justify-center px-5 py-12 sm:px-8 lg:px-12">
+    <section class="w-full max-w-xl rounded-[2rem] border border-cacao-gold/25 bg-white p-7 shadow-[0_24px_65px_rgba(59,33,23,0.13)] sm:p-10">
+      <span class="inline-flex items-center gap-2 rounded-full bg-cacao-yellow/45 px-3 py-2 text-xs font-extrabold uppercase tracking-[0.14em] text-cacao-roast">
+        <span class="size-2 rounded-full bg-cacao-amber"></span>
+        {{ i18n.t('auth.confirmation.eyebrow') }}
+      </span>
+
+      <h1 class="mt-6 text-3xl font-black leading-tight tracking-[-0.045em] text-cacao-ink sm:text-4xl">{{ i18n.t('auth.confirmation.title') }}</h1>
+      <p class="mt-4 max-w-lg text-base leading-7 text-cacao-brown">{{ i18n.t('auth.confirmation.description') }}</p>
+
+      @if (state() === 'confirming') {
+        <div class="mt-8 rounded-2xl border border-sky-200 bg-sky-50 p-5" role="status" aria-live="polite">
+          <div class="flex items-start gap-4">
+            <span class="mt-0.5 grid size-10 shrink-0 place-items-center rounded-full bg-sky-100 text-sky-700" aria-hidden="true">
+              <span class="size-5 animate-spin rounded-full border-2 border-current border-r-transparent"></span>
+            </span>
+            <div>
+              <h2 class="font-extrabold text-cacao-ink">{{ i18n.t('auth.confirmation.loadingTitle') }}</h2>
+              <p class="mt-1 text-sm leading-6 text-cacao-brown">{{ i18n.t('auth.confirmation.loadingDescription') }}</p>
+            </div>
+          </div>
+        </div>
+      } @else if (state() === 'success') {
+        <div class="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-5" role="status" aria-live="polite">
+          <div class="flex items-start gap-4">
+            <span class="mt-0.5 grid size-10 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-700" aria-hidden="true">
+              <svg class="size-5" viewBox="0 0 24 24" fill="none"><path d="m5 12 4.5 4.5L19 7" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <div>
+              <h2 class="font-extrabold text-cacao-ink">{{ i18n.t('auth.confirmation.successTitle') }}</h2>
+              <p class="mt-1 text-sm leading-6 text-cacao-brown">{{ i18n.t('auth.confirmation.successDescription') }}</p>
+              <p class="mt-3 text-sm font-bold text-emerald-800">{{ i18n.t('auth.confirmation.redirecting', { seconds: secondsToRedirect() }) }}</p>
+            </div>
+          </div>
+        </div>
+
+        <button class="mt-7 inline-flex w-full items-center justify-center rounded-2xl bg-cacao-gold px-5 py-3.5 text-sm font-extrabold text-cacao-ink shadow-[0_12px_24px_rgba(93,53,25,0.16)] transition hover:-translate-y-0.5 hover:bg-cacao-yellow focus:outline-none focus:ring-4 focus:ring-cacao-gold/35" type="button" (click)="goToLogin()">
+          {{ i18n.t('auth.confirmation.signInNow') }}
+          <svg class="ml-2 size-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      } @else {
+        <div class="mt-8 rounded-2xl border border-red-200 bg-red-50 p-5" role="alert">
+          <div class="flex items-start gap-4">
+            <span class="mt-0.5 grid size-10 shrink-0 place-items-center rounded-full bg-red-100 text-red-700" aria-hidden="true">
+              <svg class="size-5" viewBox="0 0 24 24" fill="none"><path d="M12 8v4m0 4h.01M10.3 3.9 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <div>
+              <h2 class="font-extrabold text-cacao-ink">{{ i18n.t('auth.confirmation.errorTitle') }}</h2>
+              @if (errorKey(); as error) {
+                <p class="mt-1 text-sm leading-6 text-cacao-brown">{{ i18n.t(error) }}</p>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-7 grid gap-3 sm:grid-cols-2">
+          <a class="inline-flex items-center justify-center rounded-2xl bg-cacao-gold px-5 py-3.5 text-sm font-extrabold text-cacao-ink transition hover:bg-cacao-yellow focus:outline-none focus:ring-4 focus:ring-cacao-gold/35" routerLink="/registration">{{ i18n.t('auth.confirmation.registerAgain') }}</a>
+          <a class="inline-flex items-center justify-center rounded-2xl border border-cacao-gold/45 bg-white px-5 py-3.5 text-sm font-extrabold text-cacao-ink transition hover:border-cacao-amber hover:bg-cacao-cream focus:outline-none focus:ring-4 focus:ring-cacao-gold/35" routerLink="/login">{{ i18n.t('auth.confirmation.signInNow') }}</a>
+        </div>
+      }
+
+      <p class="mt-7 border-t border-cacao-gold/20 pt-5 text-center text-xs leading-5 text-cacao-brown/75">{{ i18n.t('auth.shared.profileProtection') }}</p>
+    </section>
+  </main>
+</div>

@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?PowerDesigner AppLocale="UTF16" ID="{52FF4415-1648-45A4-AC52-F772578111C4}" Label="" LastModificationDate="1785870884" Name="Analyse d&#39;impact pour Cas d&#39;utilisation &#39;Gérer son profil&#39; [Modification]" Objects="10" Symbols="1" Type="{E76C14C6-992E-4E51-89E0-45EFBA0EBED3}" signature="IAM_MODEL_XML" version="15.1.0.2850"?>
+<!-- Veuillez ne pas modifier ce fichier -->
+
+<Model xmlns:a="attribute" xmlns:c="collection" xmlns:o="object">
+
+<o:RootObject Id="o1">
+<c:Children>
+<o:ImpactAnalysisModel Id="o2">
+<a:ObjectID>52FF4415-1648-45A4-AC52-F772578111C4</a:ObjectID>
+<a:Name>Analyse d&#39;impact pour Cas d&#39;utilisation &#39;Gérer son profil&#39; [Modification]</a:Name>
+<a:Code>Analyse d&#39;impact pour Cas d&#39;utilisation &#39;Gérer son profil&#39; [Modification]</a:Code>
+<a:CreationDate>1785870871</a:CreationDate>
+<a:Creator>keedy claudia</a:Creator>
+<a:ModificationDate>1785870872</a:ModificationDate>
+<a:Modifier>keedy claudia</a:Modifier>
+<a:PackageOptionsText>[FolderOptions]
+
+[FolderOptions\Impact Analysis Model Objects]
+GenerationCheckModel=Yes
+GenerationPath=
+GenerationOptions=
+GenerationTasks=
+GenerationTargets=
+GenerationSelections=</a:PackageOptionsText>
+<a:ModelOptionsText>[ModelOptions]
+
+[ModelOptions\Impact Analysis Model options]
+CaseSensitive=Yes
+DisplayName=Yes
+EnableTrans=No
+EnableRequirements=No
+
+[ModelOptions\Impact Analysis Model options\NamingOptionsTemplates]
+
+[ModelOptions\Impact Analysis Model options\ClssNamingOptions]
+
+[ModelOptions\Impact Analysis Model options\ClssNamingOptions\DefaultClass]
+
+[ModelOptions\Impact Analysis Model options\ClssNamingOptions\DefaultClass\Name]
+Template=
+MaxLen=254
+Case=M
+ValidChar=
+InvldChar=
+AllValid=Yes
+NoAccent=No
+DefaultChar=_
+Script=.convert_name(%Name%,&quot;_&quot;)
+ConvTable=
+ConvTablePath=%_HOME%\Fichiers de ressources\Tables de conversion
+
+[ModelOptions\Impact Analysis Model options\ClssNamingOptions\DefaultClass\Code]
+Template=
+MaxLen=254
+Case=M
+ValidChar=
+InvldChar=
+AllValid=Yes
+NoAccent=No
+DefaultChar=_
+Script=.convert_code(%Code%,&quot; &quot;)
+ConvTable=
+ConvTablePath=%_HOME%\Fichiers de ressources\Tables de conversion</a:ModelOptionsText>
+<a:AnalysisDate>1785870871</a:AnalysisDate>
+<c:RuleSets>
+<o:Shortcut Id="o3">
+<a:ObjectID>A26689DB-5D6B-477C-856A-2238D83FACC3</a:ObjectID>
+<a:Name>Analyse d&#39;impact globale</a:Name>
+<a:Code>GLOBAL_IMPACT_ANALYSIS</a:Code>
+<a:CreationDate>1785870872</a:CreationDate>
+<a:Creator>keedy claudia</a:Creator>
+<a:ModificationDate>1785870872</a:ModificationDate>
+<a:Modifier>keedy claudia</a:Modifier>
+<a:TargetStereotype/>
+<a:TargetID>E66D5C28-3B36-4478-9594-D73F906E506B</a:TargetID>
+<a:TargetClassID>2909DEB5-FEB5-490C-A046-74D3DC92D81B</a:TargetClassID>
+</o:Shortcut>
+<o:Shortcut Id="o4">
+<a:ObjectID>19DFC249-9DD8-473F-AF25-D96727E51E96</a:ObjectID>
+<a:Name>Analyse de lignage globale</a:Name>
+<a:Code>GLOBAL_LINEAGE_ANALYSIS</a:Code>
+<a:CreationDate>1785870872</a:CreationDate>
+<a:Creator>keedy claudia</a:Creator>
+<a:ModificationDate>1785870872</a:ModificationDate>
+<a:Modifier>keedy claudia</a:Modifier>
+<a:TargetStereotype/>
+<a:TargetID>84A8F62F-A0F4-422F-878F-C629A83E0F55</a:TargetID>
+<a:TargetClassID>2909DEB5-FEB5-490C-A046-74D3DC92D81B</a:TargetClassID>
+</o:Shortcut>
+</c:RuleSets>
+<c:ImpactAnalysisDiagrams>
+<o:ImpactAnalysisDiagram Id="o5">
+<a:ObjectID>B2547720-E997-4380-B194-93B2829A1ABF</a:ObjectID>
+<a:Name>Diagramme_1</a:Name>
+<a:Code>Diagramme_1</a:Code>
+<a:CreationDate>1785870883</a:CreationDate>
+<a:Creator>keedy claudia</a:Creator>
+<a:ModificationDate>1785870884</a:ModificationDate>
+<a:Modifier>keedy claudia</a:Modifier>
+<a:DisplayPreferences>[DisplayPreferences]
+
+[DisplayPreferences\IAM]
+
+[DisplayPreferences\General]
+Adjust to text=Yes
+Snap Grid=No
+Constrain Labels=Yes
+Display Grid=No
+Show Page Delimiter=Yes
+Grid size=0
+Graphic unit=2
+Window color=255, 255, 255
+Background image=
+Background mode=8
+Watermark image=
+Watermark mode=8
+Show watermark on screen=No
+Gradient mode=0
+Gradient end color=255, 255, 255
+Show Swimlane=No
+SwimlaneVert=Yes
+TreeVert=No
+CompDark=0
+
+[DisplayPreferences\Object]
+Mode=2
+Trunc Length=40
+Word Length=40
+Word Text=!&quot;&quot;#$%&amp;&#39;()*+,-./:;&lt;=&gt;?@[\]^_`{|}~
+Shortcut IntIcon=Yes
+Shortcut IntLoct=Yes
+Shortcut IntFullPath=No
+Shortcut IntLastPackage=Yes
+Shortcut ExtIcon=Yes
+Shortcut ExtLoct=No
+Shortcut ExtFullPath=No
+Shortcut ExtLastPackage=Yes
+Shortcut ExtIncludeModl=Yes
+ImpactAnalysisObject.IconPicture=No
+ImpactAnalysisObject_SymbolLayout=
+ImpactAnalysisObject.ImpactedModelName=Yes
+ImpactAnalysisObject.ShortDisplayName=Yes
+ImpactAnalysisObject.Event=Yes
+ImpactLinkSymbol.CenterText=Yes
+InitObj=Yes
+
+[DisplayPreferences\Symbol]
+
+[DisplayPreferences\Symbol\IMPANALOBJ]
+IMDNFont=Arial,8,N
+IMDNFont color=0, 0, 0
+SDSNFont=Arial,8,N
+SDSNFont color=0, 0, 0
+ACTNFont=Arial,8,N
+ACTNFont color=0, 0, 0
+AutoAdjustToText=Yes
+Keep aspect=No
+Keep center=No
+Keep size=No
+Width=4800
+Height=3600
+Brush color=255 255 255
+Fill Color=Yes
+Brush style=1
+Brush bitmap mode=12
+Brush gradient mode=0
+Brush gradient color=118 118 118
+Brush background image=
+Custom shape=
+Custom text mode=0
+Pen=1 0 0 0 255
+Shadow color=192 192 192
+Shadow=0
+
+[DisplayPreferences\Symbol\SYMLNK]
+Link NameFont=Arial,8,N
+Link NameFont color=0, 0, 0
+Line style=0
+Pen=1 0 0 0 255
+Shadow color=192 192 192
+Shadow=0
+
+[DisplayPreferences\Symbol\Free Symbol]
+Free TextFont=Arial,8,N
+Free TextFont color=0, 0, 0
+Line style=0
+AutoAdjustToText=Yes
+Keep aspect=No
+Keep center=No
+Keep size=No
+Brush color=255 255 255
+Fill Color=Yes
+Brush style=1
+Brush bitmap mode=12
+Brush gradient mode=0
+Brush gradient color=118 118 118
+Brush background image=
+Custom shape=
+Custom text mode=0
+Pen=1 0 0 0 255
+Shadow color=192 192 192
+Shadow=0</a:DisplayPreferences>
+<a:PaperSize>(8500, 11000)</a:PaperSize>
+<a:PageMargins>((315,354), (433,354))</a:PageMargins>
+<a:PageOrientation>1</a:PageOrientation>
+<a:PaperSource>15</a:PaperSource>
+<c:Symbols>
+<o:ImpactAnalysisObjectSymbol Id="o6">
+<a:CreationDate>1785870883</a:CreationDate>
+<a:ModificationDate>1785870884</a:ModificationDate>
+<a:IconMode>-1</a:IconMode>
+<a:Rect>((-9646,-2347), (9646,2347))</a:Rect>
+<a:LineColor>16744448</a:LineColor>
+<a:LineWidth>1</a:LineWidth>
+<a:FillColor>16777152</a:FillColor>
+<a:ShadowColor>12632256</a:ShadowColor>
+<a:FontList>IMDN 0 Arial,8,N
+SDSN 0 Arial,8,N
+ACTN 0 Arial,8,N</a:FontList>
+<a:BrushStyle>6</a:BrushStyle>
+<a:GradientFillMode>65</a:GradientFillMode>
+<a:GradientEndColor>16777215</a:GradientEndColor>
+<a:SymbolForm>5</a:SymbolForm>
+<c:Object>
+<o:ImpactAnalysisObject Ref="o7"/>
+</c:Object>
+</o:ImpactAnalysisObjectSymbol>
+</c:Symbols>
+</o:ImpactAnalysisDiagram>
+</c:ImpactAnalysisDiagrams>
+<c:DefaultDiagram>
+<o:ImpactAnalysisDiagram Ref="o5"/>
+</c:DefaultDiagram>
+<c:TargetModels>
+<o:TargetModel Id="o8">
+<a:ObjectID>9BE6F7A1-84C2-4363-BA79-BF9AFF90FD57</a:ObjectID>
+<a:Name>Analyse d&#39;impact globale</a:Name>
+<a:Code>GLOBAL_IMPACT_ANALYSIS</a:Code>
+<a:CreationDate>1785870872</a:CreationDate>
+<a:Creator>keedy claudia</a:Creator>
+<a:ModificationDate>1785870872</a:ModificationDate>
+<a:Modifier>keedy claudia</a:Modifier>
+<a:TargetModelURL>file:///%_RULESET%/Global Impact Analysis.rul</a:TargetModelURL>
+<a:TargetModelID>E66D5C28-3B36-4478-9594-D73F906E506B</a:TargetModelID>
+<a:TargetModelClassID>2909DEB5-FEB5-490C-A046-74D3DC92D81B</a:TargetModelClassID>
+<c:SessionShortcuts>
+<o:Shortcut Ref="o3"/>
+</c:SessionShortcuts>
+</o:TargetModel>
+<o:TargetModel Id="o9">
+<a:ObjectID>DA867FBD-A3AE-4A77-88A1-6F819B8F93C1</a:ObjectID>
+<a:Name>Analyse de lignage globale</a:Name>
+<a:Code>GLOBAL_LINEAGE_ANALYSIS</a:Code>
+<a:CreationDate>1785870872</a:CreationDate>
+<a:Creator>keedy claudia</a:Creator>
+<a:ModificationDate>1785870872</a:ModificationDate>
+<a:Modifier>keedy claudia</a:Modifier>
+<a:TargetModelURL>file:///%_RULESET%/Global Lineage Analysis.rul</a:TargetModelURL>
+<a:TargetModelID>84A8F62F-A0F4-422F-878F-C629A83E0F55</a:TargetModelID>
+<a:TargetModelClassID>2909DEB5-FEB5-490C-A046-74D3DC92D81B</a:TargetModelClassID>
+<c:SessionShortcuts>
+<o:Shortcut Ref="o4"/>
+</c:SessionShortcuts>
+</o:TargetModel>
+</c:TargetModels>
+<c:InitialObjects>
+<o:ImpactAnalysisObject Ref="o7"/>
+</c:InitialObjects>
+<c:ImpactedObjects>
+<o:ImpactAnalysisObject Id="o7">
+<a:ObjectID>10477EF0-7D2D-46A4-BA67-364C02AB1C4C</a:ObjectID>
+<a:Name>Gérer son profil</a:Name>
+<a:Code>Gerer_son_profil</a:Code>
+<a:CreationDate>1785870872</a:CreationDate>
+<a:Creator>keedy claudia</a:Creator>
+<a:ModificationDate>1785870872</a:ModificationDate>
+<a:Modifier>keedy claudia</a:Modifier>
+<a:ImpactAnalysisObject.Event>Change</a:ImpactAnalysisObject.Event>
+<a:ImpactAnalysisObject.SourceObjectID>8924F3B2-5391-4DA4-81D9-CF52581283A7</a:ImpactAnalysisObject.SourceObjectID>
+<a:SourceLocation>&lt;Modèle&gt;</a:SourceLocation>
+<a:Analyzed>1</a:Analyzed>
+<a:SourceType>18112102-1A4B-11D1-83D9-444553540000</a:SourceType>
+</o:ImpactAnalysisObject>
+</c:ImpactedObjects>
+<c:ImpactedModels>
+<o:ImpactAnalysisImpactedModel Id="o10">
+<a:ObjectID>4B2D3BAA-5CFD-44A8-9A45-7E46855F621C</a:ObjectID>
+<a:Name>Diagramme de cas d utilisation global</a:Name>
+<a:Code>Diagramme_de_cas_d_utilisation_global</a:Code>
+<a:CreationDate>1785870872</a:CreationDate>
+<a:Creator>keedy claudia</a:Creator>
+<a:ModificationDate>1785870872</a:ModificationDate>
+<a:Modifier>keedy claudia</a:Modifier>
+<a:ModelObjectID>5E107133-CD78-43C1-A291-37A2513FB575</a:ModelObjectID>
+<a:ModelLocation>%[PRJ_ROOT_DIR]%\Diagramme de cas d utilisation global.moo</a:ModelLocation>
+<a:ImpactAnalysisImpactedModel.ModelType>18112060-1A4B-11D1-83D9-444553540000</a:ImpactAnalysisImpactedModel.ModelType>
+<a:InitialModel>1</a:InitialModel>
+<c:ImpactAnalysisObjects>
+<o:ImpactAnalysisObject Ref="o7"/>
+</c:ImpactAnalysisObjects>
+</o:ImpactAnalysisImpactedModel>
+</c:ImpactedModels>
+</o:ImpactAnalysisModel>
+</c:Children>
+</o:RootObject>
+
+</Model>
