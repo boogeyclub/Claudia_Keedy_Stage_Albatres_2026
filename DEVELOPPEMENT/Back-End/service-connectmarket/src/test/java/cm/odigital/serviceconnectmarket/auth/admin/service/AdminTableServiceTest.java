@@ -130,10 +130,7 @@ class AdminTableServiceTest {
 
     @Test
     void refusesAStatusSubmittedWithANewAccountBecauseValidationDecidesIt() {
-        AdminUserTypeRecord vendeurType = new AdminUserTypeRecord(3L, "VENDEUR", "Vendeur");
-        when(repository.findUserType(3L)).thenReturn(Optional.of(vendeurType));
-        when(repository.utilisateurHasAppConnection(3L)).thenReturn(true);
-
+        // The refusal happens before any lookup: an administrator cannot decide the account status.
         AuthException exception = assertThrows(
             AuthException.class,
             () -> service.create(AdminTable.UTILISATEURS, Map.of(
