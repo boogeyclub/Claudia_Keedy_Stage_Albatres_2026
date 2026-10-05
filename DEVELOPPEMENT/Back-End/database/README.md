@@ -1,13 +1,14 @@
 # Database SQL scripts
 
-This directory keeps database SQL under version control before it is executed.
+This directory keeps database SQL under version control before it is executed. It now sits at
+the root of `Back-End`, next to the service that reads it.
 
 ## Convention
 
 - Store one schema definition per file.
 - Name the file after the PostgreSQL schema: `<schema-name>.sql`.
 - Scripts in this directory are intentionally **not** executed automatically by Spring Boot.
-- The API does verify the result: when it starts, it probes every relation and column listed in `GuSchemaCatalog` with `LIMIT 0` statements and refuses to start when one is missing. See the [backend start-up verification](../Back-End/service-connectmarket/README.md#startup-schema-verification-gusql).
+- The API does verify the result: when it starts, it probes every relation and column listed in `GuSchemaCatalog` with `LIMIT 0` statements and refuses to start when one is missing. See the [backend start-up verification](../service-connectmarket/README.md#startup-schema-verification-gusql).
 
 ## Current schemas
 
@@ -148,5 +149,5 @@ Passwords are stored only in `gu.password_history`, not in `utilisateurs`.
 To apply a script manually to the local database, run it from the repository root:
 
 ```bash
-psql -v ON_ERROR_STOP=1 -h localhost -p 6000 -U sorelle -d cacaomarketcm -f database/gu.sql
+psql -v ON_ERROR_STOP=1 -h localhost -p 6000 -U sorelle -d cacaomarketcm -f DEVELOPPEMENT/Back-End/database/gu.sql
 ```

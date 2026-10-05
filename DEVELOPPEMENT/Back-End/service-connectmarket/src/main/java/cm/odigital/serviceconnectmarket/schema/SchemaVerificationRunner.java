@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * Runs the schema verification once the application context is ready, so a database that never
- * received {@code DEVELOPPEMENT/database/gu.sql} is reported when the service starts instead of on
+ * received {@code DEVELOPPEMENT/Back-End/database/gu.sql} is reported when the service starts instead of on
  * the first protected request.
  */
 @Component

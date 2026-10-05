@@ -138,7 +138,7 @@ All endpoints below require the credentialed browser session cookie except logou
 | `DELETE` | `/cacaomarketcm/api/auth/sessions/{sessionId}` | Disconnects one session owned by the current user. Disconnecting the current row immediately signs out that browser. |
 | `POST` | `/cacaomarketcm/api/auth/logout` | Invalidates the active servlet session and marks its browser-session record invalid. |
 
-Expired browser-session records are marked invalid every five minutes by default. Set `SESSION_CLEANUP_INTERVAL` to change that schedule (for example `PT1M`). Apply the latest `database/gu.sql` before starting this version of the API, because successful login now writes to `gu.sessions_utilisateur`.
+Expired browser-session records are marked invalid every five minutes by default. Set `SESSION_CLEANUP_INTERVAL` to change that schedule (for example `PT1M`). Apply the latest `DEVELOPPEMENT/Back-End/database/gu.sql` before starting this version of the API, because successful login now writes to `gu.sessions_utilisateur`.
 
 ### Administrator `gu` table API
 
@@ -161,7 +161,7 @@ The browser frontend uses `PUT`, so the configured credentialed CORS policy expl
 
 ## Startup schema verification (`gu.sql`)
 
-Spring Boot never executes [`database/gu.sql`](../../database/gu.sql): applying the script stays a deliberate, manual step. To make a forgotten, partial, or outdated execution immediately visible, the service verifies the schema while it starts and exposes the same result through `/api/health/database`.
+Spring Boot never executes [`database/gu.sql`](../database/gu.sql): applying the script stays a deliberate, manual step. To make a forgotten, partial, or outdated execution immediately visible, the service verifies the schema while it starts and exposes the same result through `/api/health/database`.
 
 - `SchemaVerificationRunner` runs once the application context is ready. It probes the ten `gu` relations and the columns the API actually reads, always with `LIMIT 0` statements, so PostgreSQL validates the names in its catalog while no application row, password hash, session hash, or token is ever read.
 - A connectivity probe (`SELECT 1`) runs first, so an unreachable database is reported as such rather than as a missing table.
@@ -185,7 +185,7 @@ A database that never received the script first logs one line per unusable eleme
 
 ```text
 event=schema.probe.unavailable target=gu.client_entreprise exceptionType=org.springframework.jdbc.BadSqlGrammarException sqlState=42P01
-event=schema.verification.failed outcome=schema-incomplete missingElements="gu.client_entreprise" hint="Apply DEVELOPPEMENT/database/gu.sql with psql before starting the API; see the database README."
+event=schema.verification.failed outcome=schema-incomplete missingElements="gu.client_entreprise" hint="Apply DEVELOPPEMENT/Back-End/database/gu.sql with psql before starting the API; see the database README."
 ```
 
 `42P01` identifies a missing table and `42703` a missing column, exactly as described for the API logs above. Only code-owned relation/column names, the exception type, and the SQLSTATE are written; probe text, row values, and driver messages never are.
@@ -203,7 +203,7 @@ event=schema.verification.failed outcome=schema-incomplete missingElements="gu.c
 That is a normal diagnostic, not a service defect: only an outdated `gu.sql` was applied. Stop the API, re-apply the tracked script to the same database, then restart.
 
 ```powershell
-psql -v ON_ERROR_STOP=1 -h localhost -p 6000 -U sorelle -d cacaomarketcm -f "DEVELOPPEMENT\database\gu.sql"
+psql -v ON_ERROR_STOP=1 -h localhost -p 6000 -U sorelle -d cacaomarketcm -f "DEVELOPPEMENT\Back-End\database\gu.sql"
 ```
 
 The script is idempotent (`CREATE ... IF NOT EXISTS`), keeps every existing row, and backfills each existing `CLIENT` account that has no enterprise profile into `gu.client_particulier`. It stops with an explicit message rather than guessing if it finds contradictory profile data. The next start must log `event=schema.verification.completed outcome=complete schema=gu relationsChecked=10`, and `/api/health/database` must return `200 UP`.
@@ -247,7 +247,7 @@ Then verify the schema used by the API without exposing a database row:
 http://localhost:8080/cacaomarketcm/api/health/database
 ```
 
-The endpoint runs the same verification as the start-up check. A healthy schema returns `200` with `{"status":"UP","service":"service-connectmarket","database":"UP"}`. When PostgreSQL answers but the schema is incomplete, it returns `503` with `{"status":"DEGRADED","database":"UP","code":"SCHEMA_TABLES_MISSING","missingElements":"..."}`, which names the exact table or column to obtain by applying [`database/gu.sql`](../../database/gu.sql). A `503` with `DATA_ACCESS_UNAVAILABLE` means PostgreSQL itself could not be read, so check the connection settings and permissions first.
+The endpoint runs the same verification as the start-up check. A healthy schema returns `200` with `{"status":"UP","service":"service-connectmarket","database":"UP"}`. When PostgreSQL answers but the schema is incomplete, it returns `503` with `{"status":"DEGRADED","database":"UP","code":"SCHEMA_TABLES_MISSING","missingElements":"..."}`, which names the exact table or column to obtain by applying [`database/gu.sql`](../database/gu.sql). A `503` with `DATA_ACCESS_UNAVAILABLE` means PostgreSQL itself could not be read, so check the connection settings and permissions first.
 
 ## Structured API-call logs
 
@@ -273,7 +273,7 @@ event=api.request.completed method=POST path=/cacaomarketcm/api/auth/registratio
 
 Rejected requests also expose the safe API error code, for example `REGISTRATION_MAIL_DELIVERY_UNAVAILABLE`, `REGISTRATION_CONFIRMATION_EXPIRED`, `PASSWORD_RESET_TOKEN_EXPIRED`, or `INVALID_CREDENTIALS`. Request bodies, passwords, password hashes, raw registration or reset tokens, mail credentials, and token query values are intentionally never written to the logs.
 
-A database failure is returned safely as `503 DATA_ACCESS_UNAVAILABLE` and logs only an exception type, safe SQLSTATE, and application origin. For example, SQLSTATE `42P01` points to a missing relation, `42703` to an outdated/missing column, and `42501` to a database-permission problem. Apply the tracked [`database/gu.sql`](../../database/gu.sql) and verify the configured PostgreSQL account when one of these appears.
+A database failure is returned safely as `503 DATA_ACCESS_UNAVAILABLE` and logs only an exception type, safe SQLSTATE, and application origin. For example, SQLSTATE `42P01` points to a missing relation, `42703` to an outdated/missing column, and `42501` to a database-permission problem. Apply the tracked [`database/gu.sql`](../database/gu.sql) and verify the configured PostgreSQL account when one of these appears.
 
 The optional `APP_LOG_FILE` environment variable can move the log file to a different location.
 
@@ -343,8 +343,8 @@ Registration deliberately fails with `503 REGISTRATION_MAIL_DELIVERY_UNAVAILABLE
 
 ## Database setup
 
-The tracked schema is [`../../database/gu.sql`](../../database/gu.sql). Apply it manually before starting the service:
+The tracked schema is [`../database/gu.sql`](../database/gu.sql). Apply it manually before starting the service:
 
 ```bash
-psql -v ON_ERROR_STOP=1 -h localhost -p 6000 -U sorelle -d cacaomarketcm -f ../../database/gu.sql
+psql -v ON_ERROR_STOP=1 -h localhost -p 6000 -U sorelle -d cacaomarketcm -f ../database/gu.sql
 ```

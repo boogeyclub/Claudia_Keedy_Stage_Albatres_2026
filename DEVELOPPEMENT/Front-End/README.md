@@ -93,7 +93,7 @@ A successful login routes each user type to its own protected workspace:
 
 Dashboard routes first call `GET /cacaomarketcm/api/auth/session`, so refreshing a page verifies both the browser cookie and the persistent `gu.sessions_utilisateur` record. The professional dashboard header contains the CacaoMarketCM logo, account menu, language selector, account settings link, and secure sign-out action.
 
-`/CacaoMarketCM/dashboard/account` lists the current account's active browser sessions and can disconnect an unused browser. Apply the latest [`database/gu.sql`](../database/gu.sql) before using these features, because the login flow writes a session record after each successful sign-in.
+`/CacaoMarketCM/dashboard/account` lists the current account's active browser sessions and can disconnect an unused browser. Apply the latest [`database/gu.sql`](../../Back-End/database/gu.sql) before using these features, because the login flow writes a session record after each successful sign-in.
 
 ### Administrator `gu` table management
 

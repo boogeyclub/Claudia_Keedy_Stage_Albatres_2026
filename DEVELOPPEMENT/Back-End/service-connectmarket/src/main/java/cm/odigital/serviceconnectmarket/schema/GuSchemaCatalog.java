@@ -4,7 +4,7 @@ import java.util.List;
 
 /**
  * Code-owned description of the PostgreSQL schema created by
- * {@code DEVELOPPEMENT/database/gu.sql}.
+ * {@code DEVELOPPEMENT/Back-End/database/gu.sql}.
  *
  * <p>The startup verification and the database health endpoint both read this catalog instead of
  * scanning every table of the database. That keeps the check fast and deterministic, and no SQL
@@ -18,7 +18,7 @@ public final class GuSchemaCatalog {
     public static final String GU_SCHEMA = "gu";
 
     /** Tracked script that creates the schema; only used in operator-facing messages. */
-    public static final String SCRIPT_RELATIVE_PATH = "DEVELOPPEMENT/database/gu.sql";
+    public static final String SCRIPT_RELATIVE_PATH = "DEVELOPPEMENT/Back-End/database/gu.sql";
 
     /**
      * The ten relations of the {@code gu} schema together with the columns the API depends on. The

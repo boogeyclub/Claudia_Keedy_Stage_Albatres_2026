@@ -24,9 +24,10 @@ espace d'administration des tables PostgreSQL du schéma `gu`.
 │       └── Analyse d'impact ... 'Gérer son profil'.mai        Analyse d'impact
 │
 ├── DEVELOPPEMENT/               Phase réalisation
-│   ├── Back-End/service-connectmarket/   API Spring Boot (Java 17, Maven, WAR)
-│   ├── Front-End/                        Application Angular 21 + Tailwind CSS 4
-│   └── database/                         Schéma PostgreSQL versionné (gu.sql + README)
+│   ├── Back-End/
+│   │   ├── service-connectmarket/        API Spring Boot (Java 17+, Maven, WAR)
+│   │   └── database/                     Schéma PostgreSQL versionné (gu.sql + README)
+│   └── Front-End/                        Application Angular 21 + Tailwind CSS 4
 │
 ├── RAPPORT/                     Rapport de fin de stage académique (.docx)
 └── Stage 2026 ALBATRES NIV 3.rar   Archive de remise (niveau 3)
@@ -99,7 +100,7 @@ notifications globales (`core/notifications`). Les gardes de route (`authenticat
 `roleGuard`, `anonymousOnlyGuard`) améliorent la navigation mais l'autorisation réelle est
 toujours revérifiée côté Spring.
 
-### Base de données — `DEVELOPPEMENT/database`
+### Base de données — `DEVELOPPEMENT/Back-End/database`
 
 `gu.sql` crée le schéma `gu` et ses 10 tables : `type_utilisateur`, `utilisateurs`,
 `client_particulier`, `client_entreprise`, `sessions_utilisateur`, `registration_confirmation`,
@@ -113,7 +114,7 @@ données contradictoires. Il amorce le compte d'administration de développement
 ```bash
 # 1. Base de données (PostgreSQL démarré sur le port 6000)
 psql -v ON_ERROR_STOP=1 -h localhost -p 6000 -U sorelle -d cacaomarketcm \
-     -f DEVELOPPEMENT/database/gu.sql
+     -f DEVELOPPEMENT/Back-End/database/gu.sql
 
 # 2. Back-end (port 8080, contexte /cacaomarketcm)
 cd DEVELOPPEMENT/Back-End/service-connectmarket
@@ -134,4 +135,4 @@ exclu du WAR : ne jamais le committer, jamais y mettre le mot de passe Google no
 
 - API, flux d'inscription/reset, Gmail SMTP, logs : `DEVELOPPEMENT/Back-End/service-connectmarket/README.md`
 - Configuration Angular, CORS, dashboards : `DEVELOPPEMENT/Front-End/README.md`
-- Schéma, triggers, comptes de test : `DEVELOPPEMENT/database/README.md`
+- Schéma, triggers, comptes de test : `DEVELOPPEMENT/Back-End/database/README.md`
