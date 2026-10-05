@@ -39,7 +39,7 @@ espace d'administration des tables PostgreSQL du schéma `gu`.
 | --- | --- |
 | Front-end | Angular 21 (composants standalone, routes *lazy*), Tailwind CSS 4, TypeScript 5.9, Vitest |
 | Back-end | Spring Boot 4.1 (Web MVC, Validation, JDBC, Mail), Java 17, packaging WAR, SpringDoc/OpenAPI |
-| Base de données | PostgreSQL, schéma `gu` (10 tables), scripts SQL exécutés manuellement |
+| Base de données | PostgreSQL, schéma `gu` (19 tables : comptes et marché), scripts SQL exécutés manuellement |
 | E-mail | Gmail SMTP + mot de passe d'application Google (confirmation d'inscription, reset) |
 | Sécurité | BCrypt, jetons aléatoires stockés **uniquement** en SHA-256, sessions serveur persistées |
 
@@ -47,8 +47,8 @@ espace d'administration des tables PostgreSQL du schéma `gu`.
 
 Contexte servlet par défaut : `/cacaomarketcm`, donc l'API est exposée sous
 `/cacaomarketcm/api/**`. Code organisé en paquets *api / domain / service / persistence /
-messaging / session / config* autour de `auth`, plus un module `admin` (whitelist de tables) et
-un paquet `observability`.
+messaging / session / config* autour de `auth`, plus un module `admin` (whitelist de tables), un
+module `market` (catalogue, messagerie, négociations, rendez-vous) et un paquet `observability`.
 
 | Méthode | Route | Rôle |
 | --- | --- | --- |
@@ -61,7 +61,20 @@ un paquet `observability`.
 | `GET` / `DELETE` | `/api/auth/sessions[/{id}]` | Liste / déconnecte un navigateur |
 | `POST` | `/api/auth/logout` | Déconnexion idempotente |
 | `GET` | `/api/health`, `/api/health/database` | État du service et de l'accès au schéma |
-| `GET`/`POST`/`PUT`/`DELETE` | `/api/admin/tables/{table}[/{recordId}]` | Gestion admin des 10 tables du schéma `gu` (allow-list, réservée `ADMINISTRATEUR`) — le menu du dashboard en expose 6 : inscriptions, utilisateurs, profils acheteur et sessions |
+| `GET`/`POST`/`PUT`/`DELETE` | `/api/admin/tables/{table}[/{recordId}]` | Gestion admin des 10 tables de comptes du schéma `gu` (allow-list, réservée `ADMINISTRATEUR`) — le menu du dashboard en expose 6 : inscriptions, utilisateurs, profils acheteur et sessions |
+| `GET` | `/api/market/reference` | Régions (avec leurs villes) et types de cacao pour les filtres |
+| `GET` | `/api/market/lots` | Catalogue public filtrable : région, ville, type de cacao, dates de récolte, date de disponibilité, prix, quantité, recherche |
+| `GET` | `/api/market/lots/{lotId}` | Détail d'un lot et de ses photos (un lot non publié reste réservé à son vendeur) |
+| `GET`/`POST`/`PUT` | `/api/market/vendeur/lots[/{lotId}]` | Catalogue du vendeur connecté : liste, création, modification (rôle `VENDEUR`) |
+| `PUT` | `/api/market/vendeur/lots/{lotId}/statut` | Cycle de vie du lot : `BROUILLON` → `PUBLIE` → `RESERVE` → `VENDU`, ou `ARCHIVE` |
+| `POST`/`GET` | `/api/market/conversations[/{id}]` | Messagerie par article : ouvrir ou reprendre le fil d'un lot (rôle `CLIENT`), lister sa boîte, lire un fil |
+| `POST` | `/api/market/conversations/{id}/messages` | Envoyer un message dans un fil dont on est participant |
+| `POST` | `/api/market/conversations/{id}/negociations` | Proposer un prix et un volume (une seule proposition ouverte par fil, valable 72 h) |
+| `POST` | `/api/market/negociations/{id}/decision` | `ACCEPTER` ou `REFUSER` — l'acceptation passe le lot en `RESERVE` et diminue le volume disponible |
+| `POST` | `/api/market/negociations/{id}/annulation` | Annuler sa propre proposition |
+| `POST` | `/api/market/conversations/{id}/rendez-vous` | Demander une visite du site (un seul rendez-vous en attente par fil) |
+| `POST` | `/api/market/rendez-vous/{id}/decision` | `ACCEPTER` ou `REFUSER` un rendez-vous proposé par l'autre participant |
+| `POST` | `/api/market/rendez-vous/{id}/annulation` | Annuler sa propre demande de visite |
 
 Points de conception notables :
 
@@ -103,12 +116,20 @@ toujours revérifiée côté Spring.
 
 ### Base de données — `DEVELOPPEMENT/Back-End/database`
 
-`gu.sql` crée le schéma `gu` et ses 10 tables : `type_utilisateur`, `utilisateurs`,
-`client_particulier`, `client_entreprise`, `sessions_utilisateur`, `registration_confirmation`,
-`password_reset`, `basic_rights`, `type_utilisateur_basic_right`, `password_history`.
+`gu.sql` crée le schéma `gu` et ses 19 tables : les dix tables de comptes
+(`type_utilisateur`, `utilisateurs`, `client_particulier`, `client_entreprise`,
+`sessions_utilisateur`, `registration_confirmation`, `password_reset`, `basic_rights`,
+`type_utilisateur_basic_right`, `password_history`) et les neuf tables du marché
+(`region`, `ville`, `type_cacao`, `lots`, `lot_medias`, `conversations`, `messages`,
+`negociations`, `rendez_vous`).
 Le script est **idempotent** et contient une migration de reprise avec arrêt explicite en cas de
 données contradictoires. Il amorce le compte d'administration de développement `root` /
-`root1234` (à changer immédiatement) et le droit `APP-CONN`.
+`root1234` (à changer immédiatement), le droit `APP-CONN`, les dix régions et leurs villes, les
+trois types de cacao, ainsi qu'un **jeu de démonstration** : deux vendeurs (`vendeur.cacao`,
+`vendeur.littoral`), deux clients (`client.yaounde`, `client.douala`), quatre lots, trois
+conversations avec messages, deux négociations (une acceptée, une en attente) et une demande de
+visite — tous avec le mot de passe de développement `root1234`, à changer ou à supprimer avant
+tout déploiement réel.
 
 ## Démarrage local
 

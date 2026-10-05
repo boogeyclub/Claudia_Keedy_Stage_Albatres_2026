@@ -14,7 +14,7 @@ the root of `Back-End`, next to the service that reads it.
 
 | Schema | Script | Tables |
 | --- | --- | --- |
-| `gu` | [`gu.sql`](./gu.sql) | `type_utilisateur`, `utilisateurs`, `client_particulier`, `client_entreprise`, `sessions_utilisateur`, `registration_confirmation`, `password_reset`, `basic_rights`, `type_utilisateur_basic_right`, `password_history` |
+| `gu` | [`gu.sql`](./gu.sql) | **Accounts** : `type_utilisateur`, `utilisateurs`, `client_particulier`, `client_entreprise`, `sessions_utilisateur`, `registration_confirmation`, `password_reset`, `basic_rights`, `type_utilisateur_basic_right`, `password_history` — **Marché** : `region`, `ville`, `type_cacao`, `lots`, `lot_medias`, `conversations`, `messages`, `negociations`, `rendez_vous` |
 
 ## User types
 
@@ -145,6 +145,47 @@ Passwords are stored only in `gu.password_history`, not in `utilisateurs`.
 - `date_changement` records when a current password was replaced and became an old password.
 - A database trigger automatically archives the previous current password when a new current password row is inserted.
 - A unique partial index prevents more than one current password for the same user.
+
+## Catalogue, messagerie et négociations
+
+Nine further relations carry the buyer/seller features described in `gu.sql`:
+
+| Relation | Purpose |
+| --- | --- |
+| `gu.region` / `gu.ville` | Reference list of the ten regions and their cities; a lot cites one region and, optionally, one city of that region |
+| `gu.type_cacao` | Controlled cocoa vocabulary used by the catalogue filters: `CRIOLLO`, `FORASTERO`, `TRINITARIO` |
+| `gu.lots` | One sale announcement owned by an active `VENDEUR`: total and available volume, price per kg, currency, location, coordinates, harvest/availability dates and a status (`BROUILLON`, `PUBLIE`, `RESERVE`, `VENDU`, `ARCHIVE`) |
+| `gu.lot_medias` | Pictures of a lot, ordered by `position` |
+| `gu.conversations` | One thread per lot **and** per buyer (`UNIQUE (lot_id, client_id)`), so a buyer keeps a single conversation about an article; status `OUVERTE`, `EN_NEGOCIATION`, `ACCORD` or `CLOTUREE` |
+| `gu.messages` | Messages of a thread; `lu_at` records when the other participant read one |
+| `gu.negociations` | Price/volume proposal with a 72-hour `expires_at`; status `PROPOSEE`, `ACCEPTEE`, `REFUSEE`, `ANNULEE` or `EXPIREE` |
+| `gu.rendez_vous` | Site-visit proposal used to inspect the cocoa; status `PROPOSE`, `ACCEPTE`, `REFUSE` or `ANNULE` |
+
+The database repeats the application rules so that a direct write cannot bypass them:
+
+- a lot can only belong to an **active** `VENDEUR` (`enforce_lot_vendeur`);
+- a conversation is opened by a `CLIENT` account whose `vendeur_id` is the lot owner (`enforce_conversation_participants`);
+- messages, negotiations and visits can only be posted by a participant of the thread (`enforce_conversation_actor`);
+- every new message refreshes `conversations.dernier_message_at` (`touch_conversation_activity`);
+- partial unique indexes allow **one open proposal** and **one open visit per thread** (`uq_negociations_proposee_conversation`, `uq_rendez_vous_propose_conversation`);
+- `CHECK` constraints keep the volumes coherent (`0 ≤ disponible ≤ total`), the price positive, the currency three characters long, the coordinates paired and a `date_publication` filled as soon as the status leaves `BROUILLON`.
+
+Accepting a negotiation is what moves a lot to `RESERVE` and decreases its available volume; the API performs both writes in a single transaction.
+
+## Jeu de données de démonstration
+
+The end of `gu.sql` seeds a small development dataset: four accounts, four lots (including one `BROUILLON`), a picture per lot, three conversations, their messages, two negotiations and one visit request. The block is idempotent — it does nothing once the `vendeur.cacao` account exists.
+
+| Login | Profile | Password |
+| --- | --- | --- |
+| `vendeur.cacao` | Vendeur, Centre and Sud | `root1234` |
+| `vendeur.littoral` | Vendeur, Littoral | `root1234` |
+| `client.yaounde` | Client particulier | `root1234` |
+| `client.douala` | Client entreprise (`Chocolaterie du Wouri`) | `root1234` |
+
+The dataset shows every step of the flow: an accepted negotiation (lot `RESERVE`, available volume reduced by the agreed 800 kg), a pending negotiation with an unread message for the seller, and a site-visit request waiting for an answer.
+
+> These accounts share the development password `root1234`. Change their passwords or remove them before any real deployment.
 
 To apply a script manually to the local database, run it from the repository root:
 

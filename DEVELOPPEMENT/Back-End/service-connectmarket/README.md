@@ -160,7 +160,7 @@ Per-table operation matrix enforced by `AdminTableService` (each refusal answers
 | Table | Create | Update | Delete |
 | --- | --- | --- | --- |
 | `type_utilisateur` | Yes, except built-in role codes | Yes; a built-in role code is immutable | Yes; refused for built-in roles (`ADMIN_SYSTEM_ROLE_PROTECTED`) and while accounts or right assignments use it (`ADMIN_USER_TYPE_IN_USE`) |
-| `utilisateurs` | Yes; `CLIENT` is refused (`ADMIN_CLIENT_CREATION_REQUIRES_REGISTRATION`) and the type must hold `APP-CONN` | Yes; changing the type into or out of `CLIENT` is refused (`ADMIN_CLIENT_ROLE_CHANGE_REQUIRES_PROFILE_WORKFLOW`) | Yes; refuses self-deletion (`ADMIN_SELF_DELETE_FORBIDDEN`) and removing the last active administrator (`ADMIN_LAST_ADMINISTRATOR_PROTECTED`) |
+| `utilisateurs` | Yes, but the account is always written `EN_ATTENTE_CONFIRMATION` and immediately receives the same three-hour validation link as a public registration (`statut` submitted by an administrator is refused with `ADMIN_MUTATION_FIELD_FORBIDDEN`); `CLIENT` is refused (`ADMIN_CLIENT_CREATION_REQUIRES_REGISTRATION`) and the type must hold `APP-CONN` | Yes; changing the type into or out of `CLIENT` is refused (`ADMIN_CLIENT_ROLE_CHANGE_REQUIRES_PROFILE_WORKFLOW`) | Yes; refuses self-deletion (`ADMIN_SELF_DELETE_FORBIDDEN`) and removing the last active administrator (`ADMIN_LAST_ADMINISTRATOR_PROTECTED`) |
 | `client_particulier` | No | No | No |
 | `client_entreprise` | No | Yes (`raison_sociale`, `niu`, `rccm`) | No |
 | `registration_confirmation` | No | No | Cancels the pending registration and deletes the pending account; refused once confirmed (`ADMIN_CONFIRMATION_NOT_PENDING`) |
@@ -175,11 +175,39 @@ Duplicate user-type codes and names are detected before the insert/update (`ADMI
 
 The browser frontend uses `PUT`, so the configured credentialed CORS policy explicitly permits `GET`, `POST`, `PUT`, and `DELETE` from the configured frontend origins.
 
+## Market API (`/api/market`)
+
+The catalogue, messaging, negotiation and visit routes serve both the buyer and the seller workspace. Every route re-checks the servlet session against `gu.sessions_utilisateur`; the Angular route guards are never treated as authorization.
+
+| Method | Route | Rule |
+| --- | --- | --- |
+| `GET` | `/cacaomarketcm/api/market/reference` | Regions with their cities, and cocoa types, for the filter widgets. Any active account. |
+| `GET` | `/cacaomarketcm/api/market/lots` | Published/reserved lots with optional filters: `regionId`, `villeId`, `typeCacaoId`, `recolteFrom`, `recolteTo`, `disponibiliteFrom`, `prixMin`, `prixMax`, `quantiteMin`, `recherche`. Any active account. |
+| `GET` | `/cacaomarketcm/api/market/lots/{lotId}` | Lot detail and pictures. A lot that is still `BROUILLON`/`ARCHIVE` is readable only by its seller or an administrator. |
+| `GET` | `/cacaomarketcm/api/market/vendeur/lots` | The signed-in seller's own lots, every status included. `VENDEUR` only. |
+| `POST` | `/cacaomarketcm/api/market/vendeur/lots` | Creates a lot, either `BROUILLON` or `PUBLIE` (`publier`). `VENDEUR` only. |
+| `PUT` | `/cacaomarketcm/api/market/vendeur/lots/{lotId}` | Updates a lot owned by the caller; a sold lot is refused. `VENDEUR` only. |
+| `PUT` | `/cacaomarketcm/api/market/vendeur/lots/{lotId}/statut` | `PUBLIE`, `ARCHIVE` or `VENDU`, following the lot life cycle. `VENDEUR` only. |
+| `POST` | `/cacaomarketcm/api/market/conversations` | Opens or reuses the single thread for one lot and the caller, optionally with a first message. `CLIENT` only, and refused on the caller's own lot. |
+| `GET` | `/cacaomarketcm/api/market/conversations` | Inbox of the caller (buyer or seller) with the last message and an unread counter. |
+| `GET` | `/cacaomarketcm/api/market/conversations/{id}` | Thread detail: messages, proposals and visits; marks the caller's incoming messages as read. Participants only. |
+| `POST` | `/cacaomarketcm/api/market/conversations/{id}/messages` | Posts a message (1 to 2000 characters). Participants only. |
+| `POST` | `/cacaomarketcm/api/market/conversations/{id}/negociations` | Proposes a price and a volume; one open proposal per thread, expiring 72 hours later. Participants only. |
+| `POST` | `/cacaomarketcm/api/market/negociations/{id}/decision` | `ACCEPTER` or `REFUSER`, reserving the counterpart only. Acceptance moves the lot to `RESERVE` and decreases its available volume in the same transaction. |
+| `POST` | `/cacaomarketcm/api/market/negociations/{id}/annulation` | Cancels the caller's own proposal. |
+| `POST` | `/cacaomarketcm/api/market/conversations/{id}/rendez-vous` | Proposes a future site visit; one open visit per thread. Participants only. |
+| `POST` | `/cacaomarketcm/api/market/rendez-vous/{id}/decision` | `ACCEPTER` or `REFUSER` a visit proposed by the other participant. |
+| `POST` | `/cacaomarketcm/api/market/rendez-vous/{id}/annulation` | Cancels the caller's own visit proposal. |
+
+Enforced rules: one conversation per lot and per buyer, one open negotiation and one open visit per thread, negotiation expiry (72 hours) applied lazily whenever a thread is read, decisions reserved to the counterpart and cancellations to the author, and lot visibility restricted to `PUBLIE`/`RESERVE` for buyers. The same rules are repeated by database constraints and guard triggers, so a direct SQL write cannot bypass them.
+
+The end of [`gu.sql`](../database/gu.sql) seeds a development dataset (two sellers, two buyers, four lots, three conversations with messages, two negotiations and a visit request) so the workspace can be explored without manual SQL; see the [database README](../database/README.md#jeu-de-donnees-de-demonstration).
+
 ## Startup schema verification (`gu.sql`)
 
 Spring Boot never executes [`database/gu.sql`](../database/gu.sql): applying the script stays a deliberate, manual step. To make a forgotten, partial, or outdated execution immediately visible, the service verifies the schema while it starts and exposes the same result through `/api/health/database`.
 
-- `SchemaVerificationRunner` runs once the application context is ready. It probes the ten `gu` relations and the columns the API actually reads, always with `LIMIT 0` statements, so PostgreSQL validates the names in its catalog while no application row, password hash, session hash, or token is ever read.
+- `SchemaVerificationRunner` runs once the application context is ready. It probes the nineteen `gu` relations and the columns the API actually reads, always with `LIMIT 0` statements, so PostgreSQL validates the names in its catalog while no application row, password hash, session hash, or token is ever read.
 - A connectivity probe (`SELECT 1`) runs first, so an unreachable database is reported as such rather than as a missing table.
 - The expected relations and columns are code-owned ([`GuSchemaCatalog`](src/main/java/cm/odigital/serviceconnectmarket/schema/GuSchemaCatalog.java)); they are never built from request data.
 
@@ -194,7 +222,7 @@ Spring Boot never executes [`database/gu.sql`](../database/gu.sql): applying the
 A healthy start logs:
 
 ```text
-event=schema.verification.completed outcome=complete schema=gu relationsChecked=10
+event=schema.verification.completed outcome=complete schema=gu relationsChecked=19
 ```
 
 A database that never received the script first logs one line per unusable element, then the summary:
@@ -222,7 +250,7 @@ That is a normal diagnostic, not a service defect: only an outdated `gu.sql` was
 psql -v ON_ERROR_STOP=1 -h localhost -p 6000 -U sorelle -d cacaomarketcm -f "DEVELOPPEMENT\Back-End\database\gu.sql"
 ```
 
-The script is idempotent (`CREATE ... IF NOT EXISTS`), keeps every existing row, and backfills each existing `CLIENT` account that has no enterprise profile into `gu.client_particulier`. It stops with an explicit message rather than guessing if it finds contradictory profile data. The next start must log `event=schema.verification.completed outcome=complete schema=gu relationsChecked=10`, and `/api/health/database` must return `200 UP`.
+The script is idempotent (`CREATE ... IF NOT EXISTS`), keeps every existing row, and backfills each existing `CLIENT` account that has no enterprise profile into `gu.client_particulier`. It stops with an explicit message rather than guessing if it finds contradictory profile data. The next start must log `event=schema.verification.completed outcome=complete schema=gu relationsChecked=19`, and `/api/health/database` must return `200 UP`.
 
 To keep working before repairing the database, start the service with `SCHEMA_VERIFICATION_FAIL_FAST=false`: the problems are logged and the service starts, but buyer registration and profile features stay unusable until the script is applied.
 

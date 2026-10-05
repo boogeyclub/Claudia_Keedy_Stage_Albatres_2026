@@ -982,4 +982,220 @@ AFTER INSERT ON gu.messages
 FOR EACH ROW
 EXECUTE FUNCTION gu.touch_conversation_activity();
 
+-- ============================================================================
+-- Jeu de donnees de demonstration (developpement local uniquement)
+--
+-- Deux vendeurs et deux clients (un particulier, une entreprise), leurs lots,
+-- une conversation par article et un exemple de chaque etape du parcours :
+-- premiers echanges, negociation en attente, negociation acceptee (le lot
+-- passe en RESERVE et le volume disponible diminue) et demande de visite.
+--
+-- Idempotent : le bloc ne fait rien des que le compte `vendeur.cacao` existe.
+-- Les mots de passe sont ceux de l'amorçage de developpement (BCrypt de
+-- `root1234`) : a changer des le premier usage. Les photos pointent vers des
+-- chemins de remplacement, a remplacer par de vraies images.
+-- ============================================================================
+DO $demo_seed$
+DECLARE
+    demo_password CONSTANT VARCHAR(255) := '$2a$12$L9cGpgE/8q1pg7YUGiteQ.SuGnfrOOV4rghX1ikMX7ahTju3Gu7HW';
+    vendeur_type_id BIGINT;
+    client_type_id BIGINT;
+    centre_id BIGINT;
+    littoral_id BIGINT;
+    sud_id BIGINT;
+    yaounde_id BIGINT;
+    douala_id BIGINT;
+    kribi_id BIGINT;
+    forastero_id BIGINT;
+    criollo_id BIGINT;
+    trinitario_id BIGINT;
+    vendeur_cacao_id BIGINT;
+    vendeur_littoral_id BIGINT;
+    client_yaounde_id BIGINT;
+    client_douala_id BIGINT;
+    lot_centre_id BIGINT;
+    lot_kribi_id BIGINT;
+    lot_douala_id BIGINT;
+    lot_brouillon_id BIGINT;
+    conv_accord_id BIGINT;
+    conv_negociation_id BIGINT;
+    conv_visite_id BIGINT;
+BEGIN
+    IF EXISTS (SELECT 1 FROM gu.utilisateurs WHERE LOWER(login) = 'vendeur.cacao') THEN
+        RETURN;
+    END IF;
+
+    SELECT id INTO STRICT vendeur_type_id FROM gu.type_utilisateur WHERE code = 'VENDEUR';
+    SELECT id INTO STRICT client_type_id FROM gu.type_utilisateur WHERE code = 'CLIENT';
+    SELECT id INTO STRICT centre_id FROM gu.region WHERE code = 'CENTRE';
+    SELECT id INTO STRICT littoral_id FROM gu.region WHERE code = 'LITTORAL';
+    SELECT id INTO STRICT sud_id FROM gu.region WHERE code = 'SUD';
+    SELECT id INTO STRICT yaounde_id FROM gu.ville WHERE nom = 'Yaoundé' AND region_id = centre_id;
+    SELECT id INTO STRICT douala_id FROM gu.ville WHERE nom = 'Douala' AND region_id = littoral_id;
+    SELECT id INTO STRICT kribi_id FROM gu.ville WHERE nom = 'Kribi' AND region_id = sud_id;
+    SELECT id INTO STRICT forastero_id FROM gu.type_cacao WHERE code = 'FORASTERO';
+    SELECT id INTO STRICT criollo_id FROM gu.type_cacao WHERE code = 'CRIOLLO';
+    SELECT id INTO STRICT trinitario_id FROM gu.type_cacao WHERE code = 'TRINITARIO';
+
+    -- Comptes de demonstration -------------------------------------------------
+    INSERT INTO gu.utilisateurs (type_utilisateur_id, nom, prenom, email, login, statut)
+    VALUES
+        (vendeur_type_id, 'Nkoulou', 'Bernard', 'vendeur.cacao@cacaomarket.local', 'vendeur.cacao', 'ACTIF'),
+        (vendeur_type_id, 'Etaba', 'Marie-Claire', 'vendeur.littoral@cacaomarket.local', 'vendeur.littoral', 'ACTIF'),
+        (client_type_id, 'Fongang', 'Alice', 'client.yaounde@cacaomarket.local', 'client.yaounde', 'ACTIF'),
+        (client_type_id, 'Tchoumi', 'Paul', 'client.douala@cacaomarket.local', 'client.douala', 'ACTIF');
+
+    SELECT id INTO STRICT vendeur_cacao_id FROM gu.utilisateurs WHERE login = 'vendeur.cacao';
+    SELECT id INTO STRICT vendeur_littoral_id FROM gu.utilisateurs WHERE login = 'vendeur.littoral';
+    SELECT id INTO STRICT client_yaounde_id FROM gu.utilisateurs WHERE login = 'client.yaounde';
+    SELECT id INTO STRICT client_douala_id FROM gu.utilisateurs WHERE login = 'client.douala';
+
+    -- Un CLIENT doit avoir exactement un profil (contrainte differee).
+    INSERT INTO gu.client_particulier (utilisateur_id) VALUES (client_yaounde_id);
+    INSERT INTO gu.client_entreprise (utilisateur_id, raison_sociale, niu, rccm)
+    VALUES (client_douala_id, 'Chocolaterie du Wouri', 'M071812345678A', 'RC/DLA/2026/B/1234');
+
+    INSERT INTO gu.password_history (utilisateur_id, "password", "current")
+    VALUES
+        (vendeur_cacao_id, demo_password, TRUE),
+        (vendeur_littoral_id, demo_password, TRUE),
+        (client_yaounde_id, demo_password, TRUE),
+        (client_douala_id, demo_password, TRUE);
+
+    -- Catalogue du vendeur Nkoulou (Centre et Sud) ------------------------------
+    INSERT INTO gu.lots (
+        vendeur_id, type_cacao_id, titre, description,
+        quantite_kg, quantite_disponible_kg, prix_kg, devise,
+        region_id, ville_id, localisation, latitude, longitude,
+        date_recolte, date_disponibilite, statut, date_publication
+    )
+    VALUES (
+        vendeur_cacao_id, forastero_id,
+        'Fèves Forastero séchées — 5 t',
+        'Récolte de la Lékié, fermentation 6 jours, séchage solaire, taux d''humidité 7 %.',
+        5000.00, 4200.00, 1450.00, 'XAF',
+        centre_id, yaounde_id, 'Marché de gros de Mfoundi, Yaoundé', 3.848000, 11.502000,
+        CURRENT_DATE - INTERVAL '25 days', CURRENT_DATE + INTERVAL '10 days',
+        'RESERVE', CURRENT_TIMESTAMP - INTERVAL '3 days'
+    )
+    RETURNING id INTO lot_centre_id;
+
+    INSERT INTO gu.lots (
+        vendeur_id, type_cacao_id, titre, description,
+        quantite_kg, quantite_disponible_kg, prix_kg, devise,
+        region_id, ville_id, localisation, latitude, longitude,
+        date_recolte, date_disponibilite, statut, date_publication
+    )
+    VALUES (
+        vendeur_cacao_id, criollo_id,
+        'Criollo fin de Kribi — 1,2 t',
+        'Petit volume de variété fine, tri manuel, idéal chocolaterie haut de gamme.',
+        1200.00, 1200.00, 3200.00, 'XAF',
+        sud_id, kribi_id, 'Village de Lolabé, route de Kribi', 2.937000, 9.910000,
+        CURRENT_DATE - INTERVAL '12 days', CURRENT_DATE + INTERVAL '20 days',
+        'PUBLIE', CURRENT_TIMESTAMP - INTERVAL '5 days'
+    )
+    RETURNING id INTO lot_kribi_id;
+
+    -- Catalogue du vendeur Etaba (Littoral) ------------------------------------
+    INSERT INTO gu.lots (
+        vendeur_id, type_cacao_id, titre, description,
+        quantite_kg, quantite_disponible_kg, prix_kg, devise,
+        region_id, ville_id, localisation, latitude, longitude,
+        date_recolte, date_disponibilite, statut, date_publication
+    )
+    VALUES (
+        vendeur_littoral_id, trinitario_id,
+        'Trinitario du Wouri — 8 t',
+        'Lots homogènes, sacs de 60 kg, chargement au port de Douala possible.',
+        8000.00, 8000.00, 1650.00, 'XAF',
+        littoral_id, douala_id, 'Entrepôt Bonabéri, Douala', 4.070000, 9.680000,
+        CURRENT_DATE - INTERVAL '18 days', CURRENT_DATE + INTERVAL '12 days',
+        'PUBLIE', CURRENT_TIMESTAMP - INTERVAL '7 days'
+    )
+    RETURNING id INTO lot_douala_id;
+
+    INSERT INTO gu.lots (
+        vendeur_id, type_cacao_id, titre, description,
+        quantite_kg, quantite_disponible_kg, prix_kg, devise,
+        region_id, ville_id, localisation,
+        date_recolte, date_disponibilite, statut
+    )
+    VALUES (
+        vendeur_littoral_id, forastero_id,
+        'Lot en préparation — récolte 2026',
+        'Brouillon : volumes et prix encore à confirmer avec la coopérative.',
+        3000.00, 3000.00, 1500.00, 'XAF',
+        littoral_id, douala_id, 'Entrepôt Bonabéri, Douala',
+        CURRENT_DATE, CURRENT_DATE + INTERVAL '45 days',
+        'BROUILLON'
+    )
+    RETURNING id INTO lot_brouillon_id;
+
+    INSERT INTO gu.lot_medias (lot_id, url, legende, position)
+    VALUES
+        (lot_centre_id, '/demo/lots/forastero-lekie.jpg', 'Sacs de fèves séchées', 0),
+        (lot_kribi_id, '/demo/lots/criollo-kribi.jpg', 'Tri manuel du Criollo', 0),
+        (lot_douala_id, '/demo/lots/trinitario-wouri.jpg', 'Entrepôt Bonabéri', 0),
+        (lot_brouillon_id, '/demo/lots/brouillon-2026.jpg', 'Photo provisoire', 0);
+
+    -- Conversation 1 : accord conclu sur le lot du Centre ----------------------
+    INSERT INTO gu.conversations (lot_id, client_id, vendeur_id, statut, date_creation)
+    VALUES (lot_centre_id, client_yaounde_id, vendeur_cacao_id, 'ACCORD', CURRENT_TIMESTAMP - INTERVAL '4 days')
+    RETURNING id INTO conv_accord_id;
+
+    INSERT INTO gu.messages (conversation_id, expediteur_id, contenu, type, date_envoi, lu_at)
+    VALUES
+        (conv_accord_id, client_yaounde_id, 'Bonjour, les 5 t sont-elles toujours disponibles ? Je cherche 800 kg pour une première commande.', 'TEXTE', CURRENT_TIMESTAMP - INTERVAL '4 days', CURRENT_TIMESTAMP - INTERVAL '4 days' + INTERVAL '2 hours'),
+        (conv_accord_id, vendeur_cacao_id, 'Bonjour Alice, oui. À 1450 XAF le kg je peux charger sous 48 h depuis Yaoundé.', 'TEXTE', CURRENT_TIMESTAMP - INTERVAL '4 days' + INTERVAL '3 hours', CURRENT_TIMESTAMP - INTERVAL '3 days'),
+        (conv_accord_id, client_yaounde_id, 'Parfait, je propose 1400 XAF pour 800 kg.', 'TEXTE', CURRENT_TIMESTAMP - INTERVAL '3 days', CURRENT_TIMESTAMP - INTERVAL '3 days' + INTERVAL '1 hour');
+
+    INSERT INTO gu.negociations (
+        conversation_id, proposeur_id, prix_kg, quantite_kg, message,
+        statut, date_creation, date_reponse, expires_at
+    )
+    VALUES (
+        conv_accord_id, client_yaounde_id, 1400.00, 800.00, '800 kg à 1400 XAF, enlèvement sous une semaine.',
+        'ACCEPTEE', CURRENT_TIMESTAMP - INTERVAL '3 days', CURRENT_TIMESTAMP - INTERVAL '3 days' + INTERVAL '2 hours', CURRENT_TIMESTAMP - INTERVAL '3 days' + INTERVAL '72 hours'
+    );
+
+    -- Conversation 2 : negociation en attente sur le lot de Kribi -------------
+    INSERT INTO gu.conversations (lot_id, client_id, vendeur_id, statut, date_creation)
+    VALUES (lot_kribi_id, client_douala_id, vendeur_cacao_id, 'EN_NEGOCIATION', CURRENT_TIMESTAMP - INTERVAL '2 days')
+    RETURNING id INTO conv_negociation_id;
+
+    INSERT INTO gu.messages (conversation_id, expediteur_id, contenu, type, date_envoi, lu_at)
+    VALUES
+        (conv_negociation_id, client_douala_id, 'Bonjour, avez-vous un certificat d''analyse pour ce Criollo ?', 'TEXTE', CURRENT_TIMESTAMP - INTERVAL '2 days', CURRENT_TIMESTAMP - INTERVAL '2 days' + INTERVAL '30 minutes'),
+        (conv_negociation_id, vendeur_cacao_id, 'Bonjour, oui : analyse laboratoire de janvier, taux de beurre 54 %.', 'TEXTE', CURRENT_TIMESTAMP - INTERVAL '2 days' + INTERVAL '1 hour', CURRENT_TIMESTAMP - INTERVAL '1 day'),
+        (conv_negociation_id, client_douala_id, 'Merci. Je propose 3000 XAF pour la totalité des 1,2 t.', 'TEXTE', CURRENT_TIMESTAMP - INTERVAL '20 hours', NULL);
+
+    INSERT INTO gu.negociations (
+        conversation_id, proposeur_id, prix_kg, quantite_kg, message,
+        statut, date_creation, date_reponse, expires_at
+    )
+    VALUES (
+        conv_negociation_id, client_douala_id, 3000.00, 1200.00, 'Prise du lot complet à 3000 XAF le kg.',
+        'PROPOSEE', CURRENT_TIMESTAMP - INTERVAL '20 hours', NULL, CURRENT_TIMESTAMP + INTERVAL '52 hours'
+    );
+
+    -- Conversation 3 : demande de visite sur le lot de Douala ------------------
+    INSERT INTO gu.conversations (lot_id, client_id, vendeur_id, statut, date_creation)
+    VALUES (lot_douala_id, client_douala_id, vendeur_littoral_id, 'OUVERTE', CURRENT_TIMESTAMP - INTERVAL '1 day')
+    RETURNING id INTO conv_visite_id;
+
+    INSERT INTO gu.messages (conversation_id, expediteur_id, contenu, type, date_envoi, lu_at)
+    VALUES
+        (conv_visite_id, client_douala_id, 'Bonjour, possible de visiter l''entrepôt avant de confirmer un volume ?', 'TEXTE', CURRENT_TIMESTAMP - INTERVAL '1 day', CURRENT_TIMESTAMP - INTERVAL '1 day' + INTERVAL '15 minutes'),
+        (conv_visite_id, vendeur_littoral_id, 'Bien sûr. Je vous propose jeudi à 10 h, l''adresse est indiquée sur l''annonce.', 'TEXTE', CURRENT_TIMESTAMP - INTERVAL '6 hours', NULL);
+
+    INSERT INTO gu.rendez_vous (conversation_id, proposeur_id, date_proposee, lieu, note, statut, date_creation, date_reponse)
+    VALUES (
+        conv_visite_id, vendeur_littoral_id, CURRENT_TIMESTAMP + INTERVAL '5 days',
+        'Entrepôt Bonabéri, Douala', 'Prévoir un échantillon de 2 kg pour la dégustation.',
+        'PROPOSE', CURRENT_TIMESTAMP - INTERVAL '6 hours', NULL
+    );
+END;
+$demo_seed$;
+
 COMMIT;
