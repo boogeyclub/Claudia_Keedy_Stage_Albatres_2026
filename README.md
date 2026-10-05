@@ -128,6 +128,20 @@ npm install
 npm start        # http://localhost:4200/CacaoMarketCM/
 ```
 
+Le front lit l'URL de l'API dans `DEVELOPPEMENT/Front-End/public/config.json`, chargé **avant le
+démarrage d'Angular** et modifiable sans rebuild. La valeur versionnée pointe déjà sur le backend
+local :
+
+```json
+{ "apiBaseUrl": "http://localhost:8080/cacaomarketcm/api" }
+```
+
+Il n'y a **aucun proxy Angular** : le navigateur appelle Spring directement, ce qui exige que
+l'origine du front soit autorisée par CORS — c'est déjà le cas par défaut
+(`APP_CORS_ALLOWED_ORIGINS=http://localhost:4200`). Si vous changez le port du front, ajoutez la
+nouvelle origine exacte dans le `.env` du backend puis redémarrez-le. Une valeur *relative*
+(`/cacaomarketcm/api`) ne fonctionne que lorsque front et API sont servis par le même serveur web.
+
 Le fichier `src/main/resources/.env` (identifiants PostgreSQL et Gmail) est ignoré par Git et
 exclu du WAR : ne jamais le committer, jamais y mettre le mot de passe Google normal.
 

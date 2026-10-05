@@ -18,21 +18,27 @@ Angular loads [`public/config.json`](./public/config.json) **before** it bootstr
 
 ```json
 {
-  "apiBaseUrl": "/cacaomarketcm/api"
-}
-```
-
-The default origin-relative value expects the web server to make `/cacaomarketcm/api/...` available from Spring, whose servlet context is lower-case `/cacaomarketcm`. Because the file is fetched relative to Angular's `/CacaoMarketCM/` base path, the built asset is available as `/CacaoMarketCM/config.json`. It is not content-hashed, so a deployment can replace that one JSON file without rebuilding the JavaScript bundles.
-
-There is **no Angular development proxy**. When the frontend and backend have different origins, set `apiBaseUrl` in `public/config.json` to the complete Spring URL before building or deploying, for example:
-
-```json
-{
   "apiBaseUrl": "http://localhost:8080/cacaomarketcm/api"
 }
 ```
 
-A direct cross-origin URL requires Spring CORS to allow the exact frontend origin through `APP_CORS_ALLOWED_ORIGINS`. Keep credentials enabled; browser session cookies are used by the authenticated routes. Invalid or missing runtime configuration stops Angular from bootstrapping rather than silently calling an unintended API.
+That shipped value is the **local development** configuration: the Angular dev server runs on `http://localhost:4200/CacaoMarketCM/` while Spring listens on `http://localhost:8080/cacaomarketcm`, so the API base URL must be absolute. A relative value such as `/cacaomarketcm/api` is resolved against the frontend origin and the request hits the dev server instead of Spring, which answers `404 Not Found` for `POST /cacaomarketcm/api/auth/login`.
+
+There is **no Angular development proxy** and none is needed: the browser calls Spring directly, which is why `apiBaseUrl` is an absolute URL. Two consequences apply to that direct call:
+
+1. Spring CORS must allow the exact frontend origin. The tracked default already does:
+   `app.cors.allowed-origins=${APP_CORS_ALLOWED_ORIGINS:http://localhost:4200}`, with credentials enabled and `X-Request-Id` exposed.
+2. If the frontend is started on a different port or host, add that exact origin to `APP_CORS_ALLOWED_ORIGINS` in `Back-End/service-connectmarket/src/main/resources/.env` and restart the backend.
+
+Because the file is fetched relative to Angular's `/CacaoMarketCM/` base path, the built asset is available as `/CacaoMarketCM/config.json`. It is not content-hashed, so a deployment can replace that one JSON file without rebuilding the JavaScript bundles. A deployment that serves the frontend and Spring behind a single web server can use the origin-relative form instead:
+
+```json
+{
+  "apiBaseUrl": "/cacaomarketcm/api"
+}
+```
+
+Invalid or missing runtime configuration stops Angular from bootstrapping rather than silently calling an unintended API. The accepted values are an absolute `http(s)://` URL or a single-slash origin-relative path; a protocol-relative `//host` value is rejected.
 
 Start the backend service separately before submitting a registration:
 

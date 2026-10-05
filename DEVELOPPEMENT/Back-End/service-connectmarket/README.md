@@ -277,7 +277,7 @@ A database failure is returned safely as `503 DATA_ACCESS_UNAVAILABLE` and logs 
 
 The optional `APP_LOG_FILE` environment variable can move the log file to a different location.
 
-Angular reads its API base URL from the built public `config.json`; there is no Angular development proxy. When `apiBaseUrl` points to a different origin, direct frontend requests require credentialed CORS. See the [frontend API connection instructions](../../Front-End/README.md#authentication-api-connection) and ensure `APP_CORS_ALLOWED_ORIGINS` includes each exact direct origin.
+Angular reads its API base URL from the built public `config.json`; there is no Angular development proxy. The tracked `config.json` already points to `http://localhost:8080/cacaomarketcm/api` so a local Angular dev server calls this service directly. When `apiBaseUrl` points to a different origin, direct frontend requests require credentialed CORS. See the [frontend API connection instructions](../../Front-End/README.md#authentication-api-connection) and ensure `APP_CORS_ALLOWED_ORIGINS` includes each exact direct origin.
 
 ## Google Gmail SMTP configuration
 
