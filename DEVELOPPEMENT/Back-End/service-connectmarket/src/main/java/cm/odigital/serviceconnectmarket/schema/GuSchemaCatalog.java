@@ -21,8 +21,9 @@ public final class GuSchemaCatalog {
     public static final String SCRIPT_RELATIVE_PATH = "DEVELOPPEMENT/Back-End/database/gu.sql";
 
     /**
-     * The ten relations of the {@code gu} schema together with the columns the API depends on. The
-     * order mirrors the script so that the first reported failure is the most explanatory one.
+     * The nineteen relations of the {@code gu} schema together with the columns the API depends
+     * on. The order mirrors the script so that the first reported failure is the most explanatory
+     * one: the account/registration core first, then the catalogue and messaging relations.
      */
     public static final List<GuRelation> GU_RELATIONS = List.of(
         relation("type_utilisateur", "code", "tu_name"),
@@ -35,7 +36,21 @@ public final class GuSchemaCatalog {
         relation("registration_confirmation", "utilisateur_id", "token_hash", "expires_at", "confirmed_at", "date_creation"),
         relation("password_reset", "utilisateur_id", "token_hash", "expires_at", "used_at", "date_creation"),
         relation("sessions_utilisateur", "utilisateur_id", "session_hash", "browser_label", "remember_me",
-            "date_creation", "last_seen_at", "expires_at", "invalidated_at")
+            "date_creation", "last_seen_at", "expires_at", "invalidated_at"),
+        relation("region", "code", "nom"),
+        relation("ville", "region_id", "nom"),
+        relation("type_cacao", "code", "nom", "description"),
+        relation("lots", "vendeur_id", "type_cacao_id", "titre", "description", "quantite_kg",
+            "quantite_disponible_kg", "prix_kg", "devise", "region_id", "ville_id", "localisation",
+            "latitude", "longitude", "date_recolte", "date_disponibilite", "statut", "date_creation",
+            "date_publication", "date_mise_a_jour"),
+        relation("lot_medias", "lot_id", "url", "legende", "position"),
+        relation("conversations", "lot_id", "client_id", "vendeur_id", "statut", "date_creation", "dernier_message_at"),
+        relation("messages", "conversation_id", "expediteur_id", "contenu", "type", "date_envoi", "lu_at"),
+        relation("negociations", "conversation_id", "proposeur_id", "prix_kg", "quantite_kg", "message",
+            "statut", "date_creation", "date_reponse", "expires_at"),
+        relation("rendez_vous", "conversation_id", "proposeur_id", "date_proposee", "lieu", "note",
+            "statut", "date_creation", "date_reponse")
     );
 
     private static GuRelation relation(String name, String... columns) {
