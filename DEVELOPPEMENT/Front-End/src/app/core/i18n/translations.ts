@@ -402,18 +402,6 @@ export const TRANSLATIONS = {
       },
       admin: {
         description: 'Your operational home for supervising access, trade activity, and the platform experience.',
-        accessCard: {
-          title: 'Access governance',
-          description: 'Review roles and keep the right people connected to the marketplace.'
-        },
-        sessionsCard: {
-          title: 'Connected browsers',
-          description: 'Session controls make it easier to keep account access deliberate and secure.'
-        },
-        marketCard: {
-          title: 'Market readiness',
-          description: 'Prepare the operating view for the next wave of cocoa activity.'
-        },
         nextTitle: 'Set the operational rhythm',
         nextDescription: 'Your administrator dashboard is ready for user management, role controls, and future market oversight modules.',
         accountAction: 'Open my account settings',
@@ -456,26 +444,6 @@ export const TRANSLATIONS = {
             description: 'Audit account-confirmation lifecycle records.',
             securityNote: 'This is an audit view. Confirmation tokens and token hashes are never displayed; only an unconfirmed pending registration can be cancelled.'
           },
-          passwordResets: {
-            title: 'Password reset requests',
-            description: 'Audit reset-link lifecycle records and revoke unused links.',
-            securityNote: 'This is an audit and revocation view. Reset tokens and token hashes are never displayed.'
-          },
-          basicRights: {
-            title: 'Basic rights',
-            description: 'Maintain named application capabilities.',
-            securityNote: 'The required APP-CONN capability remains protected. Rights are assigned to types from the separate assignment table.'
-          },
-          rightAssignments: {
-            title: 'Type-to-right assignments',
-            description: 'Grant a basic right to a user type or remove a safe assignment.',
-            securityNote: 'Administrator assignments are protected by the database and cannot be removed from this screen.'
-          },
-          passwordHistory: {
-            title: 'Password history',
-            description: 'Audit password lifecycle metadata without security material.',
-            securityNote: 'This table is strictly read-only. Password values and password hashes are never displayed or editable.'
-          }
         },
         management: {
           eyebrow: 'Administrator table management',
@@ -504,8 +472,6 @@ export const TRANSLATIONS = {
           delete: 'Delete',
           revoke: 'Revoke session',
           cancelPending: 'Cancel registration',
-          revokeReset: 'Revoke reset link',
-          removeAssignment: 'Remove assignment',
           cancel: 'Cancel',
           createRecord: 'Create record',
           saveChanges: 'Save changes',
@@ -529,15 +495,11 @@ export const TRANSLATIONS = {
           revokedAt: 'Revoked',
           confirmedAt: 'Confirmed',
           usedAt: 'Used',
-          basicRight: 'Basic right',
-          currentPassword: 'Current',
           companyName: 'Company name',
           niu: 'NIU',
           rccm: 'RCCM',
           representativeFirstName: 'Representative first name',
           representativeLastName: 'Representative last name',
-          recordedAt: 'Recorded',
-          changedAt: 'Changed',
           actions: 'Actions'
         },
         fields: {
@@ -550,7 +512,6 @@ export const TRANSLATIONS = {
           login: 'Login',
           status: 'Status',
           temporaryPassword: 'Temporary password',
-          basicRight: 'Basic right',
           companyName: 'Registered company name',
           niu: 'NIU',
           rccm: 'RCCM'
@@ -1030,18 +991,6 @@ export const TRANSLATIONS = {
       },
       admin: {
         description: 'Votre espace opérationnel pour superviser les accès, l’activité commerciale et l’expérience de la plateforme.',
-        accessCard: {
-          title: 'Gouvernance des accès',
-          description: 'Examinez les rôles et assurez-vous que les bonnes personnes sont connectées à la place de marché.'
-        },
-        sessionsCard: {
-          title: 'Navigateurs connectés',
-          description: 'Les contrôles de session rendent l’accès aux comptes plus réfléchi et plus sécurisé.'
-        },
-        marketCard: {
-          title: 'Préparation du marché',
-          description: 'Préparez la vue opérationnelle pour la prochaine activité autour du cacao.'
-        },
         nextTitle: 'Donnez le rythme opérationnel',
         nextDescription: 'Votre tableau de bord administrateur est prêt pour la gestion des utilisateurs, les contrôles de rôles et les futurs modules de supervision du marché.',
         accountAction: 'Ouvrir mes paramètres de compte',
@@ -1084,26 +1033,6 @@ export const TRANSLATIONS = {
             description: 'Auditez le cycle de vie des confirmations de compte.',
             securityNote: 'Il s’agit d’une vue d’audit. Les jetons et empreintes de jeton ne sont jamais affichés ; seule une inscription en attente non confirmée peut être annulée.'
           },
-          passwordResets: {
-            title: 'Demandes de réinitialisation',
-            description: 'Auditez les liens de réinitialisation et révoquez les liens inutilisés.',
-            securityNote: 'Il s’agit d’une vue d’audit et de révocation. Les jetons de réinitialisation et leurs empreintes ne sont jamais affichés.'
-          },
-          basicRights: {
-            title: 'Droits de base',
-            description: 'Gérez les capacités nommées de l’application.',
-            securityNote: 'La capacité obligatoire APP-CONN reste protégée. Les droits sont attribués aux types dans la table d’association distincte.'
-          },
-          rightAssignments: {
-            title: 'Attributions type-droit',
-            description: 'Attribuez un droit de base à un type d’utilisateur ou supprimez une attribution autorisée.',
-            securityNote: 'Les attributions de l’administrateur sont protégées par la base de données et ne peuvent pas être supprimées depuis cet écran.'
-          },
-          passwordHistory: {
-            title: 'Historique des mots de passe',
-            description: 'Auditez les métadonnées du cycle de vie des mots de passe sans donnée de sécurité.',
-            securityNote: 'Cette table est strictement en lecture seule. Les valeurs et empreintes de mots de passe ne sont jamais affichées ni modifiables.'
-          }
         },
         management: {
           eyebrow: 'Gestion des tables administrateur',
@@ -1132,8 +1061,6 @@ export const TRANSLATIONS = {
           delete: 'Supprimer',
           revoke: 'Révoquer la session',
           cancelPending: 'Annuler l’inscription',
-          revokeReset: 'Révoquer le lien',
-          removeAssignment: 'Supprimer l’attribution',
           cancel: 'Annuler',
           createRecord: 'Créer l’enregistrement',
           saveChanges: 'Enregistrer les modifications',
@@ -1157,15 +1084,11 @@ export const TRANSLATIONS = {
           revokedAt: 'Révoquée le',
           confirmedAt: 'Confirmée le',
           usedAt: 'Utilisé le',
-          basicRight: 'Droit de base',
-          currentPassword: 'Actuel',
           companyName: 'Raison sociale',
           niu: 'NIU',
           rccm: 'RCCM',
           representativeFirstName: 'Prénom du représentant',
           representativeLastName: 'Nom du représentant',
-          recordedAt: 'Enregistré le',
-          changedAt: 'Modifié le',
           actions: 'Actions'
         },
         fields: {
@@ -1178,7 +1101,6 @@ export const TRANSLATIONS = {
           login: 'Identifiant',
           status: 'Statut',
           temporaryPassword: 'Mot de passe temporaire',
-          basicRight: 'Droit de base',
           companyName: 'Raison sociale',
           niu: 'NIU',
           rccm: 'RCCM'

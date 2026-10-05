@@ -1,18 +1,23 @@
 import { AdminRecord } from './admin-api.service';
 
+/**
+ * Tables exposed by the administrator dashboard menu.
+ *
+ * The API allow-list is wider (the backend `AdminTable` enum): it still supports the password
+ * and basic-right tables. The dashboard deliberately shows only what the platform currently needs —
+ * registration, user, buyer-profile, and session management — so the menu stays focused on the
+ * CacaoMarketCM operating scope. Re-adding one of the other tables means adding its definition
+ * below again.
+ */
 export type AdminTableKey =
-  | 'type_utilisateur'
   | 'utilisateurs'
+  | 'type_utilisateur'
   | 'client_particulier'
   | 'client_entreprise'
-  | 'sessions_utilisateur'
   | 'registration_confirmation'
-  | 'password_reset'
-  | 'basic_rights'
-  | 'type_utilisateur_basic_right'
-  | 'password_history';
+  | 'sessions_utilisateur';
 
-export type AdminTableIcon = 'users' | 'person' | 'monitor' | 'mail' | 'key' | 'shield' | 'link' | 'history';
+export type AdminTableIcon = 'users' | 'person' | 'monitor' | 'mail';
 export type AdminEditorControl = 'text' | 'email' | 'password' | 'select';
 export type AdminLookupSource = 'userTypes' | 'basicRights';
 
@@ -78,43 +83,23 @@ const USER_CREATE_FIELDS: readonly AdminTableField[] = [
 
 const USER_EDIT_FIELDS: readonly AdminTableField[] = USER_CREATE_FIELDS.filter((field) => field.key !== 'password');
 
-const BASIC_RIGHT_FIELDS: readonly AdminTableField[] = [
-  { key: 'code', labelKey: 'dashboard.admin.fields.code', control: 'text', required: true, maxLength: 100 },
-  { key: 'name', labelKey: 'dashboard.admin.fields.name', control: 'text', required: true, maxLength: 150 }
-];
-
 const ENTERPRISE_PROFILE_FIELDS: readonly AdminTableField[] = [
   { key: 'raisonSociale', labelKey: 'dashboard.admin.fields.companyName', control: 'text', required: true, maxLength: 150, autocomplete: 'organization' },
   { key: 'niu', labelKey: 'dashboard.admin.fields.niu', control: 'text', required: true, maxLength: 50, autocomplete: 'off' },
   { key: 'rccm', labelKey: 'dashboard.admin.fields.rccm', control: 'text', required: true, maxLength: 50, autocomplete: 'off' }
 ];
 
-const RIGHT_ASSIGNMENT_FIELDS: readonly AdminTableField[] = [
-  { key: 'typeUtilisateurId', labelKey: 'dashboard.admin.fields.userType', control: 'select', required: true, lookup: 'userTypes' },
-  { key: 'basicRightId', labelKey: 'dashboard.admin.fields.basicRight', control: 'select', required: true, lookup: 'basicRights' }
-];
-
 /**
  * Browser-visible table definitions only list safe fields. The API independently applies the same
  * table allow-list and omits all persisted password/session/token hashes.
+ *
+ * The menu follows the database logic that matters operationally: an account (`utilisateurs`) has a
+ * type (`type_utilisateur`), a `CLIENT` account owns exactly one buyer profile
+ * (`client_particulier` or `client_entreprise`) created by its registration, a pending registration
+ * is confirmed through `registration_confirmation`, and each sign-in is tracked in
+ * `sessions_utilisateur`.
  */
 export const ADMIN_TABLE_CATALOG: readonly AdminTableDefinition[] = [
-  {
-    key: 'type_utilisateur',
-    schemaName: 'gu.type_utilisateur',
-    titleKey: 'dashboard.admin.tables.userTypes.title',
-    descriptionKey: 'dashboard.admin.tables.userTypes.description',
-    securityNoteKey: 'dashboard.admin.tables.userTypes.securityNote',
-    icon: 'users',
-    columns: [
-      { key: 'id', labelKey: 'dashboard.admin.columns.id', compact: true },
-      { key: 'code', labelKey: 'dashboard.admin.columns.code', compact: true },
-      { key: 'name', labelKey: 'dashboard.admin.columns.name' }
-    ],
-    createFields: TYPE_FIELDS,
-    editFields: TYPE_FIELDS,
-    removeActionKey: 'dashboard.admin.actions.delete'
-  },
   {
     key: 'utilisateurs',
     schemaName: 'gu.utilisateurs',
@@ -134,6 +119,22 @@ export const ADMIN_TABLE_CATALOG: readonly AdminTableDefinition[] = [
     ],
     createFields: USER_CREATE_FIELDS,
     editFields: USER_EDIT_FIELDS,
+    removeActionKey: 'dashboard.admin.actions.delete'
+  },
+  {
+    key: 'type_utilisateur',
+    schemaName: 'gu.type_utilisateur',
+    titleKey: 'dashboard.admin.tables.userTypes.title',
+    descriptionKey: 'dashboard.admin.tables.userTypes.description',
+    securityNoteKey: 'dashboard.admin.tables.userTypes.securityNote',
+    icon: 'users',
+    columns: [
+      { key: 'id', labelKey: 'dashboard.admin.columns.id', compact: true },
+      { key: 'code', labelKey: 'dashboard.admin.columns.code', compact: true },
+      { key: 'name', labelKey: 'dashboard.admin.columns.name' }
+    ],
+    createFields: TYPE_FIELDS,
+    editFields: TYPE_FIELDS,
     removeActionKey: 'dashboard.admin.actions.delete'
   },
   {
@@ -174,27 +175,6 @@ export const ADMIN_TABLE_CATALOG: readonly AdminTableDefinition[] = [
     editFields: ENTERPRISE_PROFILE_FIELDS
   },
   {
-    key: 'sessions_utilisateur',
-    schemaName: 'gu.sessions_utilisateur',
-    titleKey: 'dashboard.admin.tables.sessions.title',
-    descriptionKey: 'dashboard.admin.tables.sessions.description',
-    securityNoteKey: 'dashboard.admin.tables.sessions.securityNote',
-    icon: 'monitor',
-    isAuditOnly: true,
-    columns: [
-      { key: 'id', labelKey: 'dashboard.admin.columns.id', compact: true },
-      { key: 'utilisateurLogin', labelKey: 'dashboard.admin.columns.login', compact: true },
-      { key: 'utilisateurEmail', labelKey: 'dashboard.admin.columns.email' },
-      { key: 'browserLabel', labelKey: 'dashboard.admin.columns.browser' },
-      { key: 'rememberMe', labelKey: 'dashboard.admin.columns.extended', format: 'boolean', compact: true },
-      { key: 'lastSeenAt', labelKey: 'dashboard.admin.columns.lastSeenAt', format: 'date' },
-      { key: 'expiresAt', labelKey: 'dashboard.admin.columns.expiresAt', format: 'date' },
-      { key: 'invalidatedAt', labelKey: 'dashboard.admin.columns.revokedAt', format: 'date' }
-    ],
-    removeActionKey: 'dashboard.admin.actions.revoke',
-    canRemove: (record) => record['invalidatedAt'] === null
-  },
-  {
     key: 'registration_confirmation',
     schemaName: 'gu.registration_confirmation',
     titleKey: 'dashboard.admin.tables.confirmations.title',
@@ -215,74 +195,25 @@ export const ADMIN_TABLE_CATALOG: readonly AdminTableDefinition[] = [
     canRemove: (record) => record['utilisateurStatus'] === 'EN_ATTENTE_CONFIRMATION' && record['confirmedAt'] === null
   },
   {
-    key: 'password_reset',
-    schemaName: 'gu.password_reset',
-    titleKey: 'dashboard.admin.tables.passwordResets.title',
-    descriptionKey: 'dashboard.admin.tables.passwordResets.description',
-    securityNoteKey: 'dashboard.admin.tables.passwordResets.securityNote',
-    icon: 'key',
+    key: 'sessions_utilisateur',
+    schemaName: 'gu.sessions_utilisateur',
+    titleKey: 'dashboard.admin.tables.sessions.title',
+    descriptionKey: 'dashboard.admin.tables.sessions.description',
+    securityNoteKey: 'dashboard.admin.tables.sessions.securityNote',
+    icon: 'monitor',
     isAuditOnly: true,
     columns: [
       { key: 'id', labelKey: 'dashboard.admin.columns.id', compact: true },
       { key: 'utilisateurLogin', labelKey: 'dashboard.admin.columns.login', compact: true },
       { key: 'utilisateurEmail', labelKey: 'dashboard.admin.columns.email' },
+      { key: 'browserLabel', labelKey: 'dashboard.admin.columns.browser' },
+      { key: 'rememberMe', labelKey: 'dashboard.admin.columns.extended', format: 'boolean', compact: true },
+      { key: 'lastSeenAt', labelKey: 'dashboard.admin.columns.lastSeenAt', format: 'date' },
       { key: 'expiresAt', labelKey: 'dashboard.admin.columns.expiresAt', format: 'date' },
-      { key: 'usedAt', labelKey: 'dashboard.admin.columns.usedAt', format: 'date' },
-      { key: 'dateCreation', labelKey: 'dashboard.admin.columns.createdAt', format: 'date' }
+      { key: 'invalidatedAt', labelKey: 'dashboard.admin.columns.revokedAt', format: 'date' }
     ],
-    removeActionKey: 'dashboard.admin.actions.revokeReset',
-    canRemove: (record) => record['usedAt'] === null
-  },
-  {
-    key: 'basic_rights',
-    schemaName: 'gu.basic_rights',
-    titleKey: 'dashboard.admin.tables.basicRights.title',
-    descriptionKey: 'dashboard.admin.tables.basicRights.description',
-    securityNoteKey: 'dashboard.admin.tables.basicRights.securityNote',
-    icon: 'shield',
-    columns: [
-      { key: 'id', labelKey: 'dashboard.admin.columns.id', compact: true },
-      { key: 'code', labelKey: 'dashboard.admin.columns.code', compact: true },
-      { key: 'name', labelKey: 'dashboard.admin.columns.name' }
-    ],
-    createFields: BASIC_RIGHT_FIELDS,
-    editFields: BASIC_RIGHT_FIELDS
-  },
-  {
-    key: 'type_utilisateur_basic_right',
-    schemaName: 'gu.type_utilisateur_basic_right',
-    titleKey: 'dashboard.admin.tables.rightAssignments.title',
-    descriptionKey: 'dashboard.admin.tables.rightAssignments.description',
-    securityNoteKey: 'dashboard.admin.tables.rightAssignments.securityNote',
-    icon: 'link',
-    columns: [
-      { key: 'typeCode', labelKey: 'dashboard.admin.columns.userType', compact: true },
-      { key: 'basicRightCode', labelKey: 'dashboard.admin.columns.basicRight', compact: true },
-      { key: 'dateCreation', labelKey: 'dashboard.admin.columns.createdAt', format: 'date' }
-    ],
-    createFields: RIGHT_ASSIGNMENT_FIELDS,
-    removeActionKey: 'dashboard.admin.actions.removeAssignment',
-    recordIdKey: 'recordId',
-    canRemove: (record) => record['typeCode'] !== 'ADMINISTRATEUR'
-      && !(record['basicRightCode'] === 'APP-CONN'
-        && (record['typeCode'] === 'CLIENT' || record['typeCode'] === 'VENDEUR'))
-  },
-  {
-    key: 'password_history',
-    schemaName: 'gu.password_history',
-    titleKey: 'dashboard.admin.tables.passwordHistory.title',
-    descriptionKey: 'dashboard.admin.tables.passwordHistory.description',
-    securityNoteKey: 'dashboard.admin.tables.passwordHistory.securityNote',
-    icon: 'history',
-    isAuditOnly: true,
-    columns: [
-      { key: 'id', labelKey: 'dashboard.admin.columns.id', compact: true },
-      { key: 'utilisateurLogin', labelKey: 'dashboard.admin.columns.login', compact: true },
-      { key: 'utilisateurEmail', labelKey: 'dashboard.admin.columns.email' },
-      { key: 'current', labelKey: 'dashboard.admin.columns.currentPassword', format: 'boolean', compact: true },
-      { key: 'dateInsertion', labelKey: 'dashboard.admin.columns.recordedAt', format: 'date' },
-      { key: 'dateChangement', labelKey: 'dashboard.admin.columns.changedAt', format: 'date' }
-    ]
+    removeActionKey: 'dashboard.admin.actions.revoke',
+    canRemove: (record) => record['invalidatedAt'] === null
   }
 ] as const;
 

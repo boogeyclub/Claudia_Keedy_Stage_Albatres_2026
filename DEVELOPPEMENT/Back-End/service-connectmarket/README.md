@@ -153,6 +153,8 @@ The Angular administrator workspace uses the explicitly whitelisted routes below
 
 Approved table keys are `type_utilisateur`, `utilisateurs`, `client_particulier`, `client_entreprise`, `sessions_utilisateur`, `registration_confirmation`, `password_reset`, `basic_rights`, `type_utilisateur_basic_right`, and `password_history`. They are an enum allow-list, not SQL identifiers supplied by a caller.
 
+The API keeps supporting all ten tables. The Angular dashboard deliberately exposes only the six needed for registration, user, buyer-profile, and session management; see the [frontend table-management section](../../Front-End/README.md#administrator-gu-table-management). A request for one of the other four still works for an operator who calls the API directly.
+
 `client_particulier` is an audit-safe profile relationship; it is created only by the buyer registration flow. `client_entreprise` exposes a tightly scoped update for `raisonSociale`, `niu`, and `rccm`, with identifier uniqueness preserved. Direct administrator creation of `CLIENT` accounts and role changes into or out of `CLIENT` are refused so an account cannot bypass or orphan its required buyer legal profile.
 
 `password_history` is read-only. Browser sessions, registration confirmations, and password resets are audit-safe views with narrowly scoped revocation/cancellation actions. Raw passwords, password hashes, browser session hashes, confirmation token hashes, and password-reset token hashes are never accepted for display or returned by these routes. The service protects built-in roles, the `APP-CONN` capability, administrator assignments, self-removal, and the final active administrator account.

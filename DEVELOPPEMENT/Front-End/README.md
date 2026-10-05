@@ -103,9 +103,19 @@ Dashboard routes first call `GET /cacaomarketcm/api/auth/session`, so refreshing
 
 ### Administrator `gu` table management
 
-The administrator dashboard contains one card for each `gu` table and opens a protected route under `/CacaoMarketCM/dashboard/admin/tables/{table}`. The Angular route guard improves navigation, while the Spring API independently checks the persisted active browser session and `ADMINISTRATEUR` role for every request.
+The administrator dashboard contains one card for each **dashboard-managed** `gu` table and opens a protected route under `/CacaoMarketCM/dashboard/admin/tables/{table}`. The Angular route guard improves navigation, while the Spring API independently checks the persisted active browser session and `ADMINISTRATEUR` role for every request.
 
-Configuration and account records expose controlled create/update/removal workflows. `client_particulier` is an audit view of the registration-managed private-buyer relationship, while `client_entreprise` allows only controlled updates to the legal company details. `sessions_utilisateur`, `registration_confirmation`, and `password_reset` remain audit-oriented with only revocation or pending-registration cancellation actions; `password_history` is read-only. The UI deliberately has no column or form field for password hashes, session hashes, confirmation hashes, or reset-token hashes. The server enforces the same allow-list and safety rules.
+The menu is intentionally limited to the platform's current operating scope:
+
+| Purpose | Tables shown |
+| --- | --- |
+| Users | `utilisateurs` (create, update, remove), `type_utilisateur` (the `CLIENT`, `VENDEUR`, and `ADMINISTRATEUR` roles referenced by every account) |
+| Registrations | `registration_confirmation` (pending sign-ups, with a cancel action), plus `client_particulier` and `client_entreprise`, the buyer profiles a `CLIENT` registration creates |
+| Sessions | `sessions_utilisateur` (connected browsers, with a revoke action) |
+
+The password and basic-right tables are deliberately **not** exposed by the dashboard: `gu.password_reset` and `gu.password_history` belong to the self-service password flow, and `gu.basic_rights`/`gu.type_utilisateur_basic_right` are access-configuration tables whose only right (`APP-CONN`) is already granted automatically. The API still supports all ten tables, so re-adding a card means adding its definition to [`admin-table-catalog.ts`](./src/app/core/admin/admin-table-catalog.ts); a URL for a table that is not in the menu redirects back to the dashboard overview.
+
+`client_particulier` is an audit view of the registration-managed private-buyer relationship, while `client_entreprise` allows only controlled updates to the legal company details. `sessions_utilisateur` and `registration_confirmation` remain audit-oriented with only revocation or pending-registration cancellation actions. The UI deliberately has no column or form field for password hashes, session hashes, confirmation hashes, or reset-token hashes. The server enforces the same allow-list and safety rules.
 
 ### Dashboard component layout
 

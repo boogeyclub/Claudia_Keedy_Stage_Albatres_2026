@@ -61,7 +61,7 @@ un paquet `observability`.
 | `GET` / `DELETE` | `/api/auth/sessions[/{id}]` | Liste / déconnecte un navigateur |
 | `POST` | `/api/auth/logout` | Déconnexion idempotente |
 | `GET` | `/api/health`, `/api/health/database` | État du service et de l'accès au schéma |
-| `GET`/`POST`/`PUT`/`DELETE` | `/api/admin/tables/{table}[/{recordId}]` | Gestion admin des 10 tables du schéma `gu` (allow-list, réservée `ADMINISTRATEUR`) |
+| `GET`/`POST`/`PUT`/`DELETE` | `/api/admin/tables/{table}[/{recordId}]` | Gestion admin des 10 tables du schéma `gu` (allow-list, réservée `ADMINISTRATEUR`) — le menu du dashboard en expose 6 : inscriptions, utilisateurs, profils acheteur et sessions |
 
 Points de conception notables :
 
