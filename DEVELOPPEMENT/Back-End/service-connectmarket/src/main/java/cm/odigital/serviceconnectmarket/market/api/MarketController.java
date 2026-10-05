@@ -32,6 +32,7 @@ import cm.odigital.serviceconnectmarket.market.api.dto.DecisionRequest;
 import cm.odigital.serviceconnectmarket.market.api.dto.LotDetailResponse;
 import cm.odigital.serviceconnectmarket.market.api.dto.LotRequest;
 import cm.odigital.serviceconnectmarket.market.api.dto.LotStatusRequest;
+import cm.odigital.serviceconnectmarket.market.api.dto.MarketDealsResponse;
 import cm.odigital.serviceconnectmarket.market.api.dto.MarketMutationResponse;
 import cm.odigital.serviceconnectmarket.market.api.dto.MarketReferenceResponse;
 import cm.odigital.serviceconnectmarket.market.api.dto.MessageRequest;
@@ -168,6 +169,13 @@ public class MarketController {
             client.utilisateur().id()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(toConversationDetail(conversation));
+    }
+
+    @GetMapping("/deals")
+    public MarketDealsResponse deals(HttpServletRequest servletRequest) {
+        AuthenticatedSession session = sessionGuard.requireSession(servletRequest);
+        Map<String, Object> deals = marketService.deals(session.utilisateur().id());
+        return new MarketDealsResponse(cast(deals.get("negociations")), cast(deals.get("rendezVous")));
     }
 
     @GetMapping("/conversations")

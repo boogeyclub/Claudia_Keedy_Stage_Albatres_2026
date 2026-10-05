@@ -757,6 +757,86 @@ public class MarketRepository {
         );
     }
 
+    /**
+     * Every proposal the signed-in account takes part in, whichever side it is on, with the lot and
+     * the counterpart name attached. Used by the transversal "negotiations and visits" page, so that
+     * page never has to open a thread (which would mark its messages read) just to summarise them.
+     */
+    public List<Map<String, Object>> findNegociationsFor(long utilisateurId) {
+        return jdbcTemplate.query(
+            """
+                SELECT n.id, n.conversation_id, n.proposeur_id, n.prix_kg, n.quantite_kg, n.message, n.statut,
+                       n.date_creation, n.date_reponse, n.expires_at,
+                       l.id AS lot_id, l.titre AS lot_titre, l.devise AS lot_devise, l.statut AS lot_statut,
+                       CASE WHEN c.client_id = ? THEN ve.prenom || ' ' || ve.nom ELSE cl.prenom || ' ' || cl.nom END AS contrepartie
+                FROM gu.negociations n
+                INNER JOIN gu.conversations c ON c.id = n.conversation_id
+                INNER JOIN gu.lots l ON l.id = c.lot_id
+                INNER JOIN gu.utilisateurs cl ON cl.id = c.client_id
+                INNER JOIN gu.utilisateurs ve ON ve.id = c.vendeur_id
+                WHERE c.client_id = ? OR c.vendeur_id = ?
+                ORDER BY n.date_creation DESC, n.id DESC
+                """,
+            (resultSet, rowNumber) -> row(
+                "id", resultSet.getLong("id"),
+                "conversationId", resultSet.getLong("conversation_id"),
+                "proposeurId", resultSet.getLong("proposeur_id"),
+                "prixKg", resultSet.getBigDecimal("prix_kg"),
+                "quantiteKg", resultSet.getBigDecimal("quantite_kg"),
+                "message", resultSet.getString("message"),
+                "statut", resultSet.getString("statut"),
+                "dateCreation", instant(resultSet, "date_creation"),
+                "dateReponse", instant(resultSet, "date_reponse"),
+                "expiresAt", instant(resultSet, "expires_at"),
+                "lotId", resultSet.getLong("lot_id"),
+                "lotTitre", resultSet.getString("lot_titre"),
+                "lotDevise", resultSet.getString("lot_devise"),
+                "lotStatut", resultSet.getString("lot_statut"),
+                "contrepartie", resultSet.getString("contrepartie")
+            ),
+            utilisateurId,
+            utilisateurId,
+            utilisateurId
+        );
+    }
+
+    /** Visit proposals of the signed-in account, with the same context as the negotiations. */
+    public List<Map<String, Object>> findRendezVousFor(long utilisateurId) {
+        return jdbcTemplate.query(
+            """
+                SELECT rd.id, rd.conversation_id, rd.proposeur_id, rd.date_proposee, rd.lieu, rd.note,
+                       rd.statut, rd.date_creation, rd.date_reponse,
+                       l.id AS lot_id, l.titre AS lot_titre, l.devise AS lot_devise,
+                       CASE WHEN c.client_id = ? THEN ve.prenom || ' ' || ve.nom ELSE cl.prenom || ' ' || cl.nom END AS contrepartie
+                FROM gu.rendez_vous rd
+                INNER JOIN gu.conversations c ON c.id = rd.conversation_id
+                INNER JOIN gu.lots l ON l.id = c.lot_id
+                INNER JOIN gu.utilisateurs cl ON cl.id = c.client_id
+                INNER JOIN gu.utilisateurs ve ON ve.id = c.vendeur_id
+                WHERE c.client_id = ? OR c.vendeur_id = ?
+                ORDER BY rd.date_proposee DESC, rd.id DESC
+                """,
+            (resultSet, rowNumber) -> row(
+                "id", resultSet.getLong("id"),
+                "conversationId", resultSet.getLong("conversation_id"),
+                "proposeurId", resultSet.getLong("proposeur_id"),
+                "dateProposee", instant(resultSet, "date_proposee"),
+                "lieu", resultSet.getString("lieu"),
+                "note", resultSet.getString("note"),
+                "statut", resultSet.getString("statut"),
+                "dateCreation", instant(resultSet, "date_creation"),
+                "dateReponse", instant(resultSet, "date_reponse"),
+                "lotId", resultSet.getLong("lot_id"),
+                "lotTitre", resultSet.getString("lot_titre"),
+                "lotDevise", resultSet.getString("lot_devise"),
+                "contrepartie", resultSet.getString("contrepartie")
+            ),
+            utilisateurId,
+            utilisateurId,
+            utilisateurId
+        );
+    }
+
     public boolean updateRendezVousStatus(long rendezVousId, String statut, Instant respondedAt) {
         return jdbcTemplate.update(
             """

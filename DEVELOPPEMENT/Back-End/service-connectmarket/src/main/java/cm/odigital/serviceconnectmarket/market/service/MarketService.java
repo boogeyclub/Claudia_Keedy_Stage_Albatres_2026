@@ -86,6 +86,22 @@ public class MarketService {
         return repository.findCatalogue(filter);
     }
 
+    /**
+     * Negotiations and visits of the caller, whichever side of the conversation it is on.
+     *
+     * Not read-only: reading this page also applies the negotiation expiry rule, exactly like
+     * opening a thread does.
+     */
+    @Transactional
+    public Map<String, Object> deals(long utilisateurId) {
+        expireOverdueNegotiations();
+
+        Map<String, Object> deals = new LinkedHashMap<>();
+        deals.put("negociations", repository.findNegociationsFor(utilisateurId));
+        deals.put("rendezVous", repository.findRendezVousFor(utilisateurId));
+        return deals;
+    }
+
     @Transactional(readOnly = true)
     public List<Map<String, Object>> myLots(long vendeurId) {
         return repository.findLotsForVendeur(vendeurId);

@@ -191,6 +191,7 @@ The catalogue, messaging, negotiation and visit routes serve both the buyer and 
 | `POST` | `/cacaomarketcm/api/market/conversations` | Opens or reuses the single thread for one lot and the caller, optionally with a first message. `CLIENT` only, and refused on the caller's own lot. |
 | `GET` | `/cacaomarketcm/api/market/conversations` | Inbox of the caller (buyer or seller) with the last message and an unread counter. |
 | `GET` | `/cacaomarketcm/api/market/conversations/{id}` | Thread detail: messages, proposals and visits; marks the caller's incoming messages as read. Participants only. |
+| `GET` | `/cacaomarketcm/api/market/deals` | Every negotiation and visit request of the caller, across all their conversations; used by the transversal page so it never marks messages read. |
 | `POST` | `/cacaomarketcm/api/market/conversations/{id}/messages` | Posts a message (1 to 2000 characters). Participants only. |
 | `POST` | `/cacaomarketcm/api/market/conversations/{id}/negociations` | Proposes a price and a volume; one open proposal per thread, expiring 72 hours later. Participants only. |
 | `POST` | `/cacaomarketcm/api/market/negociations/{id}/decision` | `ACCEPTER` or `REFUSER`, reserving the counterpart only. Acceptance moves the lot to `RESERVE` and decreases its available volume in the same transaction. |
