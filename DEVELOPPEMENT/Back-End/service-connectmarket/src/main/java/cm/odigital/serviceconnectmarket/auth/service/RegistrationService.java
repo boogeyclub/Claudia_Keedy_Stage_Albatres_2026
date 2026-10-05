@@ -2,7 +2,6 @@ package cm.odigital.serviceconnectmarket.auth.service;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Locale;
 
@@ -12,19 +11,14 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.util.UriComponentsBuilder;
 
-import cm.odigital.serviceconnectmarket.auth.config.RegistrationProperties;
 import cm.odigital.serviceconnectmarket.auth.domain.AuthException;
 import cm.odigital.serviceconnectmarket.auth.domain.ClientProfileType;
-import cm.odigital.serviceconnectmarket.auth.domain.ConfirmationTokenGenerator;
 import cm.odigital.serviceconnectmarket.auth.domain.PendingRegistration;
 import cm.odigital.serviceconnectmarket.auth.domain.RegistrableUserType;
 import cm.odigital.serviceconnectmarket.auth.domain.RegistrationCommand;
 import cm.odigital.serviceconnectmarket.auth.domain.RegistrationLanguage;
 import cm.odigital.serviceconnectmarket.auth.domain.UtilisateurStatus;
-import cm.odigital.serviceconnectmarket.auth.messaging.RegistrationConfirmationMessage;
-import cm.odigital.serviceconnectmarket.auth.messaging.RegistrationMessagingService;
 import cm.odigital.serviceconnectmarket.auth.persistence.AuthRepository;
 import cm.odigital.serviceconnectmarket.auth.persistence.ConfirmationRecord;
 import cm.odigital.serviceconnectmarket.observability.AuditValue;
@@ -33,32 +27,25 @@ import cm.odigital.serviceconnectmarket.observability.AuditValue;
 public class RegistrationService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RegistrationService.class);
-    private static final Duration CONFIRMATION_TTL = Duration.ofHours(3);
     private static final int BCRYPT_MAXIMUM_BYTES = 72;
 
     private final AuthRepository authRepository;
     private final PasswordEncoder passwordEncoder;
-    private final ConfirmationTokenGenerator tokenGenerator;
-    private final RegistrationMessagingService messagingService;
     private final RegistrationExpiryService registrationExpiryService;
-    private final RegistrationProperties registrationProperties;
+    private final RegistrationConfirmationDispatcher confirmationDispatcher;
     private final Clock clock;
 
     public RegistrationService(
         AuthRepository authRepository,
         PasswordEncoder passwordEncoder,
-        ConfirmationTokenGenerator tokenGenerator,
-        RegistrationMessagingService messagingService,
         RegistrationExpiryService registrationExpiryService,
-        RegistrationProperties registrationProperties,
+        RegistrationConfirmationDispatcher confirmationDispatcher,
         Clock authenticationClock
     ) {
         this.authRepository = authRepository;
         this.passwordEncoder = passwordEncoder;
-        this.tokenGenerator = tokenGenerator;
-        this.messagingService = messagingService;
         this.registrationExpiryService = registrationExpiryService;
-        this.registrationProperties = registrationProperties;
+        this.confirmationDispatcher = confirmationDispatcher;
         this.clock = authenticationClock;
     }
 
@@ -106,8 +93,7 @@ public class RegistrationService {
             ));
         LOGGER.info("event=registration.user-type.resolved role={} typeUtilisateurId={}", userType.name(), typeUtilisateurId);
 
-        String rawToken = tokenGenerator.generate();
-        Instant expiresAt = now.plus(CONFIRMATION_TTL);
+        Instant expiresAt;
 
         try {
             long utilisateurId = authRepository.insertUtilisateur(
@@ -121,22 +107,17 @@ public class RegistrationService {
             );
             insertClientProfile(utilisateurId, profile);
             authRepository.insertPasswordHash(utilisateurId, passwordEncoder.encode(command.password()), now);
-            authRepository.insertConfirmation(utilisateurId, tokenGenerator.hash(rawToken), expiresAt, now);
+            expiresAt = confirmationDispatcher.dispatch(
+                utilisateurId,
+                email,
+                prenom,
+                RegistrationLanguage.fromNullable(command.language())
+            );
             LOGGER.info(
                 "event=registration.pending.persisted utilisateurId={} expiresAt={}",
                 utilisateurId,
                 expiresAt
             );
-
-            LOGGER.info("event=registration.mail.dispatch.started utilisateurId={}", utilisateurId);
-            messagingService.sendConfirmation(new RegistrationConfirmationMessage(
-                email,
-                prenom,
-                confirmationUrl(rawToken),
-                expiresAt,
-                RegistrationLanguage.fromNullable(command.language())
-            ));
-            LOGGER.info("event=registration.mail.dispatch.completed utilisateurId={}", utilisateurId);
         } catch (DataIntegrityViolationException exception) {
             // A concurrent request can race the identity/enterprise-ID checks above. Keep the
             // response generic and never log the submitted NIU, RCCM, or any database message.
@@ -158,7 +139,7 @@ public class RegistrationService {
             throw AuthException.badRequest("REGISTRATION_CONFIRMATION_TOKEN_MISSING", "A confirmation token is required.");
         }
 
-        ConfirmationRecord confirmation = authRepository.findConfirmationByTokenHash(tokenGenerator.hash(rawToken))
+        ConfirmationRecord confirmation = authRepository.findConfirmationByTokenHash(confirmationDispatcher.hashToken(rawToken))
             .orElseThrow(() -> AuthException.badRequest(
                 "REGISTRATION_CONFIRMATION_TOKEN_INVALID",
                 "This registration confirmation link is invalid."
@@ -269,14 +250,6 @@ public class RegistrationService {
         authRepository.deletePasswordHistory(utilisateurId);
         authRepository.deleteConfirmation(utilisateurId);
         authRepository.deletePendingUtilisateur(utilisateurId, UtilisateurStatus.PENDING_CONFIRMATION.databaseValue());
-    }
-
-    private String confirmationUrl(String rawToken) {
-        return UriComponentsBuilder.fromUriString(registrationProperties.getConfirmationUrl())
-            .queryParam("token", rawToken)
-            .build()
-            .encode()
-            .toUriString();
     }
 
     private String normalizeEmail(String email) {

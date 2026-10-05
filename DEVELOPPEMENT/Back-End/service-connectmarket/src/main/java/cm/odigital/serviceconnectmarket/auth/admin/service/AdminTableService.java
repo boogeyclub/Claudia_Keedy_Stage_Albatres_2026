@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,9 @@ import cm.odigital.serviceconnectmarket.auth.admin.persistence.AdminTableReposit
 import cm.odigital.serviceconnectmarket.auth.admin.persistence.AdminUserRecord;
 import cm.odigital.serviceconnectmarket.auth.admin.persistence.AdminUserTypeRecord;
 import cm.odigital.serviceconnectmarket.auth.domain.AuthException;
+import cm.odigital.serviceconnectmarket.auth.domain.RegistrationLanguage;
+import cm.odigital.serviceconnectmarket.auth.domain.UtilisateurStatus;
+import cm.odigital.serviceconnectmarket.auth.service.RegistrationConfirmationDispatcher;
 
 /**
  * Contains the only supported administration mutations for the gu schema. It intentionally does
@@ -28,13 +33,14 @@ import cm.odigital.serviceconnectmarket.auth.domain.AuthException;
 @Service
 public class AdminTableService {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(AdminTableService.class);
     private static final int BCRYPT_MAXIMUM_BYTES = 72;
     private static final Set<String> SYSTEM_ROLES = Set.of("ADMINISTRATEUR", "VENDEUR", "CLIENT");
     private static final Set<String> LOGIN_ROLES = Set.of("ADMINISTRATEUR", "VENDEUR", "CLIENT");
     private static final Set<String> MANAGED_USER_STATUSES = Set.of("ACTIF", "SUSPENDU");
     private static final Set<String> USER_TYPE_FIELDS = Set.of("code", "name");
     private static final Set<String> USER_CREATE_FIELDS = Set.of(
-        "typeUtilisateurId", "nom", "prenom", "email", "login", "statut", "password"
+        "typeUtilisateurId", "nom", "prenom", "email", "login", "password"
     );
     private static final Set<String> USER_UPDATE_FIELDS = Set.of(
         "typeUtilisateurId", "nom", "prenom", "email", "login", "statut"
@@ -47,15 +53,18 @@ public class AdminTableService {
 
     private final AdminTableRepository repository;
     private final PasswordEncoder passwordEncoder;
+    private final RegistrationConfirmationDispatcher confirmationDispatcher;
     private final Clock clock;
 
     public AdminTableService(
         AdminTableRepository repository,
         PasswordEncoder passwordEncoder,
+        RegistrationConfirmationDispatcher confirmationDispatcher,
         Clock authenticationClock
     ) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
+        this.confirmationDispatcher = confirmationDispatcher;
         this.clock = authenticationClock;
     }
 
@@ -208,21 +217,30 @@ public class AdminTableService {
         String prenom = text(values, "prenom", 100);
         String email = email(values, "email");
         String login = text(values, "login", 100);
-        String status = status(values, "statut");
         String password = password(values, "password");
         ensureIdentityAvailable(email, login, null);
 
         Instant now = clock.instant();
+        // An administrator-created account follows the public registration rule: it stays in
+        // EN_ATTENTE_CONFIRMATION until its owner opens the e-mailed link. AuthenticationService
+        // already refuses a sign-in in that state, so no administrator can activate an account
+        // without the owner's consent.
         long utilisateurId = repository.insertUtilisateur(
             type.id(),
             nom,
             prenom,
             email,
             login,
-            status,
+            UtilisateurStatus.PENDING_CONFIRMATION.databaseValue(),
             now
         );
         repository.insertPasswordHash(utilisateurId, passwordEncoder.encode(password), now);
+        confirmationDispatcher.dispatch(utilisateurId, email, prenom, RegistrationLanguage.FR);
+        LOGGER.info(
+            "event=admin-table.utilisateur.created-pending administratorId={} utilisateurId={}",
+            administratorId,
+            utilisateurId
+        );
     }
 
     private void updateUtilisateur(long id, Map<String, Object> values, long administratorId) {

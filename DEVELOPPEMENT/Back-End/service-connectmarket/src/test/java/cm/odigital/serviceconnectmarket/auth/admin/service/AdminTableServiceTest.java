@@ -27,6 +27,9 @@ import cm.odigital.serviceconnectmarket.auth.admin.persistence.AdminTableReposit
 import cm.odigital.serviceconnectmarket.auth.admin.persistence.AdminUserRecord;
 import cm.odigital.serviceconnectmarket.auth.admin.persistence.AdminUserTypeRecord;
 import cm.odigital.serviceconnectmarket.auth.domain.AuthException;
+import cm.odigital.serviceconnectmarket.auth.domain.RegistrationLanguage;
+import cm.odigital.serviceconnectmarket.auth.domain.UtilisateurStatus;
+import cm.odigital.serviceconnectmarket.auth.service.RegistrationConfirmationDispatcher;
 
 @ExtendWith(MockitoExtension.class)
 class AdminTableServiceTest {
@@ -37,6 +40,9 @@ class AdminTableServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private RegistrationConfirmationDispatcher confirmationDispatcher;
+
     private AdminTableService service;
 
     @BeforeEach
@@ -44,6 +50,7 @@ class AdminTableServiceTest {
         service = new AdminTableService(
             repository,
             passwordEncoder,
+            confirmationDispatcher,
             Clock.fixed(Instant.parse("2026-09-29T12:00:00Z"), ZoneOffset.UTC)
         );
     }
@@ -86,7 +93,7 @@ class AdminTableServiceTest {
     }
 
     @Test
-    void createsAControlledUserByHashingTheSubmittedPasswordBeforePersistence() {
+    void createsAPendingUserAndSendsTheValidationLinkAnAdministratorCannotSkip() {
         AdminUserTypeRecord vendeurType = new AdminUserTypeRecord(3L, "VENDEUR", "Vendeur");
         when(repository.findUserType(3L)).thenReturn(Optional.of(vendeurType));
         when(repository.utilisateurHasAppConnection(3L)).thenReturn(true);
@@ -97,7 +104,7 @@ class AdminTableServiceTest {
             eq("Amina"),
             eq("amina@example.com"),
             eq("amina-cocoa"),
-            eq("ACTIF"),
+            eq(UtilisateurStatus.PENDING_CONFIRMATION.databaseValue()),
             any(Instant.class)
         )).thenReturn(42L);
         when(passwordEncoder.encode("secure-passphrase")).thenReturn("bcrypt-hash-only");
@@ -108,7 +115,6 @@ class AdminTableServiceTest {
             "prenom", "Amina",
             "email", "amina@example.com",
             "login", "amina-cocoa",
-            "statut", "ACTIF",
             "password", "secure-passphrase"
         ), 1L);
 
@@ -118,6 +124,31 @@ class AdminTableServiceTest {
             "bcrypt-hash-only",
             Instant.parse("2026-09-29T12:00:00Z")
         );
+        // The owner must validate the account by e-mail before being able to sign in.
+        verify(confirmationDispatcher).dispatch(42L, "amina@example.com", "Amina", RegistrationLanguage.FR);
+    }
+
+    @Test
+    void refusesAStatusSubmittedWithANewAccountBecauseValidationDecidesIt() {
+        AdminUserTypeRecord vendeurType = new AdminUserTypeRecord(3L, "VENDEUR", "Vendeur");
+        when(repository.findUserType(3L)).thenReturn(Optional.of(vendeurType));
+        when(repository.utilisateurHasAppConnection(3L)).thenReturn(true);
+
+        AuthException exception = assertThrows(
+            AuthException.class,
+            () -> service.create(AdminTable.UTILISATEURS, Map.of(
+                "typeUtilisateurId", 3,
+                "nom", "Ngono",
+                "prenom", "Amina",
+                "email", "amina@example.com",
+                "login", "amina-cocoa",
+                "statut", "ACTIF",
+                "password", "secure-passphrase"
+            ), 1L)
+        );
+
+        assertEquals("ADMIN_MUTATION_FIELD_FORBIDDEN", exception.getCode());
+        verify(repository, never()).insertUtilisateur(anyLong(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
