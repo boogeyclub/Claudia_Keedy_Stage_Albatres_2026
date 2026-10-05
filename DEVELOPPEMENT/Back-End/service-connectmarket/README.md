@@ -159,6 +159,48 @@ Approved table keys are `type_utilisateur`, `utilisateurs`, `client_particulier`
 
 The browser frontend uses `PUT`, so the configured credentialed CORS policy explicitly permits `GET`, `POST`, `PUT`, and `DELETE` from the configured frontend origins.
 
+## Startup schema verification (`gu.sql`)
+
+Spring Boot never executes [`database/gu.sql`](../../database/gu.sql): applying the script stays a deliberate, manual step. To make a forgotten, partial, or outdated execution immediately visible, the service verifies the schema while it starts and exposes the same result through `/api/health/database`.
+
+- `SchemaVerificationRunner` runs once the application context is ready. It probes the ten `gu` relations and the columns the API actually reads, always with `LIMIT 0` statements, so PostgreSQL validates the names in its catalog while no application row, password hash, session hash, or token is ever read.
+- A connectivity probe (`SELECT 1`) runs first, so an unreachable database is reported as such rather than as a missing table.
+- The expected relations and columns are code-owned ([`GuSchemaCatalog`](src/main/java/cm/odigital/serviceconnectmarket/schema/GuSchemaCatalog.java)); they are never built from request data.
+
+| Start-up situation | Behaviour |
+| --- | --- |
+| Every relation and column is readable | one `INFO` line, then the service starts |
+| A relation or column is missing | an `ERROR` line naming each element, then the service refuses to start (`fail-fast` default) |
+| PostgreSQL is unreachable | an `ERROR` line about the connection, then the service refuses to start |
+| `app.schema-verification.enabled=false` | the check is skipped and reported as such |
+| `app.schema-verification.fail-fast=false` | problems are logged and the service starts anyway |
+
+A healthy start logs:
+
+```text
+event=schema.verification.completed outcome=complete schema=gu relationsChecked=10
+```
+
+A database that never received the script first logs one line per unusable element, then the summary:
+
+```text
+event=schema.probe.unavailable target=gu.client_entreprise exceptionType=org.springframework.jdbc.BadSqlGrammarException sqlState=42P01
+event=schema.verification.failed outcome=schema-incomplete missingElements="gu.client_entreprise" hint="Apply DEVELOPPEMENT/database/gu.sql with psql before starting the API; see the database README."
+```
+
+`42P01` identifies a missing table and `42703` a missing column, exactly as described for the API logs above. Only code-owned relation/column names, the exception type, and the SQLSTATE are written; probe text, row values, and driver messages never are.
+
+Configure the policy in the untracked local `.env` (or through real environment variables):
+
+```properties
+SCHEMA_VERIFICATION_ENABLED=true
+SCHEMA_VERIFICATION_FAIL_FAST=true
+```
+
+To observe the failure path deliberately, start the API against an empty database (or temporarily rename `gu.utilisateurs`), read the message, then apply the script and restart. This ordering means a missing script fails at start-up instead of surfacing as a `500` on the first registration.
+
+This is a verification, not a migration: it creates nothing and changes nothing. If the project later needs automatic, versioned schema changes, add Flyway or Liquibase with versioned SQL files instead.
+
 ## Run and verify the API connection
 
 From `Back-End/service-connectmarket`, start the backend process (building with `mvnw.cmd install` alone does not start it):
@@ -179,13 +221,13 @@ A running service returns:
 {"status":"UP","service":"service-connectmarket"}
 ```
 
-Then verify the database projection used by the administrator user-type table without exposing a database row:
+Then verify the schema used by the API without exposing a database row:
 
 ```text
 http://localhost:8080/cacaomarketcm/api/health/database
 ```
 
-A healthy schema returns `200` with `{"status":"UP","database":"UP",...}`. A `503` response with `DATA_ACCESS_UNAVAILABLE` means Spring is running but cannot read `gu.type_utilisateur` and its `code`/`tu_name` columns; apply the current [`database/gu.sql`](../../database/gu.sql) or correct the PostgreSQL connection/permissions before testing administrator tables.
+The endpoint runs the same verification as the start-up check. A healthy schema returns `200` with `{"status":"UP","service":"service-connectmarket","database":"UP"}`. When PostgreSQL answers but the schema is incomplete, it returns `503` with `{"status":"DEGRADED","database":"UP","code":"SCHEMA_TABLES_MISSING","missingElements":"..."}`, which names the exact table or column to obtain by applying [`database/gu.sql`](../../database/gu.sql). A `503` with `DATA_ACCESS_UNAVAILABLE` means PostgreSQL itself could not be read, so check the connection settings and permissions first.
 
 ## Structured API-call logs
 

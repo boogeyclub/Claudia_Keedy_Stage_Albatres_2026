@@ -7,10 +7,15 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 import cm.odigital.serviceconnectmarket.auth.config.PasswordResetProperties;
 import cm.odigital.serviceconnectmarket.auth.config.RegistrationProperties;
+import cm.odigital.serviceconnectmarket.schema.SchemaVerificationProperties;
 
 @SpringBootApplication
 @EnableScheduling
-@EnableConfigurationProperties({RegistrationProperties.class, PasswordResetProperties.class})
+@EnableConfigurationProperties({
+    RegistrationProperties.class,
+    PasswordResetProperties.class,
+    SchemaVerificationProperties.class
+})
 public class ServiceConnectmarketApplication {
 
     public static void main(String[] args) {

@@ -63,7 +63,7 @@ Then verify the schema projection required for administrator user types:
 http://localhost:8080/cacaomarketcm/api/health/database
 ```
 
-It returns `200` with `"database":"UP"` only when Spring can read `gu.type_utilisateur.code` and `gu.type_utilisateur.tu_name`. If either check fails, repair Spring/the PostgreSQL schema before debugging the Angular UI.
+It returns `200` with `"database":"UP"` only when Spring can read every relation and column created by `gu.sql` — the same verification the API runs when it starts. An incomplete schema is reported as `503` with `"code":"SCHEMA_TABLES_MISSING"` and a `missingElements` list, while an unreachable PostgreSQL is reported as `503` with `"code":"DATA_ACCESS_UNAVAILABLE"`. Repair the database or apply the script before debugging the Angular UI.
 
 The Angular app sends requests to the `apiBaseUrl` loaded from `config.json`. The backend logs each request without logging request bodies, passwords, or registration/reset-token query values.
 

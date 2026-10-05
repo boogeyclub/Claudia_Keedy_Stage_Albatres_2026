@@ -69,7 +69,11 @@ Points de conception notables :
 - aucun mot de passe en clair ni jeton brut n'est journalisé ou renvoyé par l'API ;
 - chaque appel `/api/**` porte un en-tête `X-Request-Id` repris dans les logs
   (`logs/cacaomarket-api.log`) pour tracer un flux de bout en bout ;
-- les erreurs base de données sont traduites en `503 DATA_ACCESS_UNAVAILABLE` sans fuite SQL.
+- les erreurs base de données sont traduites en `503 DATA_ACCESS_UNAVAILABLE` sans fuite SQL ;
+- **au démarrage, le service vérifie le schéma** : chaque table et chaque colonne attendue de
+  `gu.sql` est testée par une sonde `LIMIT 0` (aucune donnée n'est lue). Si un élément manque, le
+  démarrage s'arrête avec la liste exacte des tables/colonnes absentes ; `SCHEMA_VERIFICATION_FAIL_FAST=false`
+  permet de démarrer malgré tout, et `/api/health/database` renvoie le même diagnostic à chaud.
 
 ### Front-end — `DEVELOPPEMENT/Front-End`
 

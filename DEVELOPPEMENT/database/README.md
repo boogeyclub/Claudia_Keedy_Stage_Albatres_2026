@@ -7,6 +7,7 @@ This directory keeps database SQL under version control before it is executed.
 - Store one schema definition per file.
 - Name the file after the PostgreSQL schema: `<schema-name>.sql`.
 - Scripts in this directory are intentionally **not** executed automatically by Spring Boot.
+- The API does verify the result: when it starts, it probes every relation and column listed in `GuSchemaCatalog` with `LIMIT 0` statements and refuses to start when one is missing. See the [backend start-up verification](../Back-End/service-connectmarket/README.md#startup-schema-verification-gusql).
 
 ## Current schemas
 
