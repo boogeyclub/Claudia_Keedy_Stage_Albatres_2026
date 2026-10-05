@@ -10,8 +10,8 @@
 #
 # Component-specific rules also live next to each project and are honored by Git:
 #   DEVELOPPEMENT/.gitignore
-#   DEVELOPPEMENT/Front-End/                        Angular front end
-#   DEVELOPPEMENT/Back-End/service-connectmarket/   Spring Boot API
+#   DEVELOPPEMENT/Front-End/.gitignore
+#   DEVELOPPEMENT/Back-End/service-connectmarket/.gitignore
 # ---------------------------------------------------------------------------
 
 # --- Environment & secrets -------------------------------------------------
