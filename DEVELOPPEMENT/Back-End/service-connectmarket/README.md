@@ -190,6 +190,26 @@ event=schema.verification.failed outcome=schema-incomplete missingElements="gu.c
 
 `42P01` identifies a missing table and `42703` a missing column, exactly as described for the API logs above. Only code-owned relation/column names, the exception type, and the SQLSTATE are written; probe text, row values, and driver messages never are.
 
+### Re-applying the script on an existing database
+
+The two buyer-profile relations are the most recent addition to the schema, so a database created from an earlier revision of the script reports exactly this:
+
+```text
+event=schema.probe.unavailable target=gu.client_particulier exceptionType=... sqlState=42P01
+event=schema.probe.unavailable target=gu.client_entreprise exceptionType=... sqlState=42P01
+event=schema.verification.failed outcome=schema-incomplete missingElements="gu.client_particulier, gu.client_entreprise"
+```
+
+That is a normal diagnostic, not a service defect: only an outdated `gu.sql` was applied. Stop the API, re-apply the tracked script to the same database, then restart.
+
+```powershell
+psql -v ON_ERROR_STOP=1 -h localhost -p 6000 -U sorelle -d cacaomarketcm -f "DEVELOPPEMENT\database\gu.sql"
+```
+
+The script is idempotent (`CREATE ... IF NOT EXISTS`), keeps every existing row, and backfills each existing `CLIENT` account that has no enterprise profile into `gu.client_particulier`. It stops with an explicit message rather than guessing if it finds contradictory profile data. The next start must log `event=schema.verification.completed outcome=complete schema=gu relationsChecked=10`, and `/api/health/database` must return `200 UP`.
+
+To keep working before repairing the database, start the service with `SCHEMA_VERIFICATION_FAIL_FAST=false`: the problems are logged and the service starts, but buyer registration and profile features stay unusable until the script is applied.
+
 Configure the policy in the untracked local `.env` (or through real environment variables):
 
 ```properties
