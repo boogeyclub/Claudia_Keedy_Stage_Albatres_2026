@@ -92,7 +92,8 @@ l'origine via `APP_CORS_ALLOWED_ORIGINS`.
 | `/registration/confirm` | Confirmation de compte |
 | `/password-reset`, `/password-reset/confirm` | Demande et choix d'un nouveau mot de passe |
 | `/dashboard/admin[/tables/:table]` | Espace administrateur (vue d'ensemble + gestion des tables) |
-| `/dashboard/vendeur`, `/dashboard/client` | Tableaux de bord vendeur et client |
+| `/dashboard/vendeur[/lots\|/profil\|/messages]` | Espace vendeur : vue d'ensemble + sections de travail |
+| `/dashboard/client[/catalogue\|/preferences\|/messages]` | Espace client : vue d'ensemble + sections de travail |
 | `/dashboard/account` | Paramètres du compte et sessions navigateur actives |
 
 L'interface est **bilingue français / anglais** (`core/i18n`) et dispose d'un système de

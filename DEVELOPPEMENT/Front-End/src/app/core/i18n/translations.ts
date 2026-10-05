@@ -392,6 +392,27 @@ export const TRANSLATIONS = {
         accountMenu: 'Account menu',
         signedInAs: 'Signed in as {{role}}',
         openAccountMenu: 'Open account menu'
+        greeting: 'Hello, {{name}}',
+        navigationMenu: 'Workspace navigation',
+        openMenu: 'Open workspace navigation',
+        workspaces: {
+          administrator: 'Administrator workspace',
+          seller: 'Seller workspace',
+          client: 'Client workspace'
+        },
+        nav: {
+          users: 'Users',
+          registrations: 'Registrations',
+          sessions: 'Sessions',
+          lots: 'My lots',
+          profile: 'Seller profile',
+          messages: 'Messages',
+          catalog: 'Catalogue',
+          preferences: 'Preferences'
+        }
+      },
+      section: {
+        placeholder: 'This section is being prepared with the CacaoMarketCM workflows.'
       },
       shared: {
         workspace: 'CacaoMarketCM workspace',
@@ -981,6 +1002,27 @@ export const TRANSLATIONS = {
         accountMenu: 'Menu du compte',
         signedInAs: 'Connecté(e) en tant que {{role}}',
         openAccountMenu: 'Ouvrir le menu du compte'
+        greeting: 'Bonjour {{name}}',
+        navigationMenu: 'Navigation de l’espace',
+        openMenu: 'Ouvrir la navigation de l’espace',
+        workspaces: {
+          administrator: 'Espace administrateur',
+          seller: 'Espace vendeur',
+          client: 'Espace client'
+        },
+        nav: {
+          users: 'Utilisateurs',
+          registrations: 'Inscriptions',
+          sessions: 'Sessions',
+          lots: 'Mes lots',
+          profile: 'Profil vendeur',
+          messages: 'Messages',
+          catalog: 'Catalogue',
+          preferences: 'Préférences'
+        }
+      },
+      section: {
+        placeholder: 'Cette section est en préparation avec les flux CacaoMarketCM.'
       },
       shared: {
         workspace: 'Espace CacaoMarketCM',

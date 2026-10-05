@@ -58,9 +58,45 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/dashboard/seller/overview/seller-dashboard').then((module) => module.SellerDashboardComponent)
       },
       {
+        path: 'vendeur/lots',
+        canActivate: [roleGuard('VENDEUR')],
+        data: { titleKey: 'dashboard.seller.prepareCard.title', descriptionKey: 'dashboard.seller.prepareCard.description' },
+        loadComponent: () => import('./pages/dashboard/shared/workspace-section/workspace-section').then((module) => module.WorkspaceSectionComponent)
+      },
+      {
+        path: 'vendeur/profil',
+        canActivate: [roleGuard('VENDEUR')],
+        data: { titleKey: 'dashboard.seller.profileCard.title', descriptionKey: 'dashboard.seller.profileCard.description' },
+        loadComponent: () => import('./pages/dashboard/shared/workspace-section/workspace-section').then((module) => module.WorkspaceSectionComponent)
+      },
+      {
+        path: 'vendeur/messages',
+        canActivate: [roleGuard('VENDEUR')],
+        data: { titleKey: 'dashboard.seller.conversationsCard.title', descriptionKey: 'dashboard.seller.conversationsCard.description' },
+        loadComponent: () => import('./pages/dashboard/shared/workspace-section/workspace-section').then((module) => module.WorkspaceSectionComponent)
+      },
+      {
         path: 'client',
         canActivate: [roleGuard('CLIENT')],
         loadComponent: () => import('./pages/dashboard/client/overview/client-dashboard').then((module) => module.ClientDashboardComponent)
+      },
+      {
+        path: 'client/catalogue',
+        canActivate: [roleGuard('CLIENT')],
+        data: { titleKey: 'dashboard.user.discoverCard.title', descriptionKey: 'dashboard.user.discoverCard.description' },
+        loadComponent: () => import('./pages/dashboard/shared/workspace-section/workspace-section').then((module) => module.WorkspaceSectionComponent)
+      },
+      {
+        path: 'client/preferences',
+        canActivate: [roleGuard('CLIENT')],
+        data: { titleKey: 'dashboard.user.preferencesCard.title', descriptionKey: 'dashboard.user.preferencesCard.description' },
+        loadComponent: () => import('./pages/dashboard/shared/workspace-section/workspace-section').then((module) => module.WorkspaceSectionComponent)
+      },
+      {
+        path: 'client/messages',
+        canActivate: [roleGuard('CLIENT')],
+        data: { titleKey: 'dashboard.user.conversationsCard.title', descriptionKey: 'dashboard.user.conversationsCard.description' },
+        loadComponent: () => import('./pages/dashboard/shared/workspace-section/workspace-section').then((module) => module.WorkspaceSectionComponent)
       },
       {
         path: 'account',

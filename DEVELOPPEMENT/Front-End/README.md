@@ -132,11 +132,24 @@ pages/dashboard/
 │   └── overview/
 └── shared/
     ├── account-settings/
+    ├── workspace-section/
     ├── dashboard-redirect.ts
     └── dashboard-shell.*
 ```
 
 Routes stay unchanged; only the lazy-import locations follow this organisation.
+
+### Role navigation in the dashboard header
+
+The shared `app-dashboard-header` renders the workspace title of the signed-in role and a navigation built from [`src/app/core/auth/role-navigation.ts`](./src/app/core/auth/role-navigation.ts) — the single place to edit when a section is added or renamed:
+
+| Role | Header sections |
+| --- | --- |
+| `ADMINISTRATEUR` | Overview, Users, Registrations, Sessions (the last three open the corresponding `gu` table pages) |
+| `VENDEUR` | Overview, My lots, Seller profile, Messages |
+| `CLIENT` | Overview, Catalogue, Preferences, Messages |
+
+The navigation collapses behind a hamburger button below the `lg` breakpoint. Sections that are not implemented yet are served by the shared `workspace-section` page, which reads its title and description from the route `data` — those keys currently reuse the wording of the role overview cards. Replacing a placeholder with the real page means pointing the nav entry and the route at the new component; the same role guards (`roleGuard('VENDEUR')`, `roleGuard('CLIENT')`) apply.
 
 ## Code scaffolding
 
