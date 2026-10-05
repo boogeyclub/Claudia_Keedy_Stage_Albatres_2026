@@ -68,6 +68,7 @@ module `market` (catalogue, messagerie, négociations, rendez-vous) et un paquet
 | `GET`/`POST`/`PUT` | `/api/market/vendeur/lots[/{lotId}]` | Catalogue du vendeur connecté : liste, création, modification (rôle `VENDEUR`) |
 | `PUT` | `/api/market/vendeur/lots/{lotId}/statut` | Cycle de vie du lot : `BROUILLON` → `PUBLIE` → `RESERVE` → `VENDU`, ou `ARCHIVE` |
 | `POST`/`GET` | `/api/market/conversations[/{id}]` | Messagerie par article : ouvrir ou reprendre le fil d'un lot (rôle `CLIENT`), lister sa boîte, lire un fil |
+| `GET` | `/api/market/deals` | Négociations et rendez-vous de l'utilisateur connecté, toutes conversations confondues |
 | `POST` | `/api/market/conversations/{id}/messages` | Envoyer un message dans un fil dont on est participant |
 | `POST` | `/api/market/conversations/{id}/negociations` | Proposer un prix et un volume (une seule proposition ouverte par fil, valable 72 h) |
 | `POST` | `/api/market/negociations/{id}/decision` | `ACCEPTER` ou `REFUSER` — l'acceptation passe le lot en `RESERVE` et diminue le volume disponible |
@@ -105,8 +106,12 @@ l'origine via `APP_CORS_ALLOWED_ORIGINS`.
 | `/registration/confirm` | Confirmation de compte |
 | `/password-reset`, `/password-reset/confirm` | Demande et choix d'un nouveau mot de passe |
 | `/dashboard/admin[/tables/:table]` | Espace administrateur (vue d'ensemble + gestion des tables) |
-| `/dashboard/vendeur[/lots\|/profil\|/messages]` | Espace vendeur : vue d'ensemble + sections de travail |
-| `/dashboard/client[/catalogue\|/preferences\|/messages]` | Espace client : vue d'ensemble + sections de travail |
+| `/dashboard/vendeur/lots` | Catalogue du vendeur : création, modification, publication, archivage |
+| `/dashboard/vendeur/messages` | Messagerie par article (messages, négociation, rendez-vous) |
+| `/dashboard/vendeur/profil` | Profil vendeur : compte et résumé de l'activité catalogue |
+| `/dashboard/client/catalogue` | Catalogue des lots publiés : filtres (région, ville, type, dates, prix, volume) et contact du vendeur |
+| `/dashboard/client/messages` | Messagerie par article (messages, négociation, rendez-vous) |
+| `/dashboard/client/deals` | Négociations et rendez-vous en cours, avec réponse directe |
 | `/dashboard/account` | Paramètres du compte et sessions navigateur actives |
 
 L'interface est **bilingue français / anglais** (`core/i18n`) et dispose d'un système de

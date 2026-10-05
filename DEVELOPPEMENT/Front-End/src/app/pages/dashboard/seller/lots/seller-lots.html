@@ -1,0 +1,193 @@
+<section class="relative isolate overflow-hidden">
+  <div class="pointer-events-none absolute -left-28 top-0 size-80 rounded-full bg-cacao-yellow/30 blur-3xl"></div>
+  <div class="pointer-events-none absolute right-0 bottom-0 size-80 rounded-full bg-cacao-gold/20 blur-3xl"></div>
+
+  <div class="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-11 lg:px-8 lg:py-14">
+    <span class="inline-flex items-center gap-2 rounded-full bg-cacao-pale px-3 py-1.5 text-[0.68rem] font-extrabold uppercase tracking-[0.16em] text-cacao-roast">
+      <span class="size-1.5 rounded-full bg-cacao-amber"></span>
+      {{ i18n.t('dashboard.header.workspaces.seller') }}
+    </span>
+    <h1 class="mt-5 max-w-3xl text-3xl font-black leading-tight tracking-[-0.055em] text-cacao-ink sm:text-4xl">{{ i18n.t('market.lots.title') }}</h1>
+    <p class="mt-4 max-w-3xl text-base leading-7 text-cacao-brown sm:text-lg">{{ i18n.t('market.lots.description') }}</p>
+
+    <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="rounded-full bg-cacao-pale px-3 py-1.5 text-xs font-extrabold text-cacao-roast">{{ i18n.t('market.lots.count', { count: lots().length }) }}</span>
+        <span class="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-extrabold text-emerald-800 ring-1 ring-emerald-200">{{ i18n.t('market.lots.publishedCount', { count: publishedCount() }) }}</span>
+      </div>
+      <button class="inline-flex items-center rounded-2xl bg-cacao-ink px-5 py-3 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-cacao-roast" type="button" (click)="startCreate()">
+        {{ i18n.t('market.lots.newLot') }}
+      </button>
+    </div>
+
+    @if (isEditorOpen()) {
+      <form class="mt-6 rounded-[1.75rem] border border-cacao-gold/30 bg-white p-6 shadow-[0_18px_44px_rgba(59,33,23,0.12)] sm:p-8" [formGroup]="lotForm" (ngSubmit)="save()">
+        <h2 class="text-xl font-black tracking-[-0.04em] text-cacao-ink">
+          {{ editingLotId() === null ? i18n.t('market.lots.createTitle') : i18n.t('market.lots.editTitle') }}
+        </h2>
+
+        <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <label class="flex flex-col gap-2 xl:col-span-2">
+            <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.lots.field.title') }}</span>
+            <input class="h-11 rounded-2xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:bg-white" type="text" formControlName="titre" [placeholder]="i18n.t('market.lots.field.titlePlaceholder')" />
+          </label>
+
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.lots.field.type') }}</span>
+            <select class="h-11 rounded-2xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:bg-white" formControlName="typeCacaoId">
+              <option [ngValue]="null">{{ i18n.t('market.lots.field.typePlaceholder') }}</option>
+              @for (type of reference()?.cacaoTypes ?? []; track type.id) {
+                <option [ngValue]="type.id">{{ type.nom }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="flex flex-col gap-2 md:col-span-2 xl:col-span-3">
+            <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.lots.field.description') }}</span>
+            <textarea class="min-h-24 rounded-2xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 py-2 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:bg-white" formControlName="description" [placeholder]="i18n.t('market.lots.field.descriptionPlaceholder')"></textarea>
+          </label>
+
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.lots.field.quantity') }}</span>
+            <input class="h-11 rounded-2xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:bg-white" type="number" min="0.01" step="0.01" formControlName="quantiteKg" />
+          </label>
+
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.lots.field.price') }}</span>
+            <input class="h-11 rounded-2xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:bg-white" type="number" min="0.01" step="0.01" formControlName="prixKg" />
+          </label>
+
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.lots.field.currency') }}</span>
+            <input class="h-11 rounded-2xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 text-sm font-semibold uppercase text-cacao-ink outline-none transition focus:border-cacao-amber focus:bg-white" type="text" maxlength="3" formControlName="devise" />
+          </label>
+
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.lots.field.region') }}</span>
+            <select class="h-11 rounded-2xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:bg-white" formControlName="regionId">
+              <option [ngValue]="null">{{ i18n.t('market.lots.field.regionPlaceholder') }}</option>
+              @for (region of reference()?.regions ?? []; track region.id) {
+                <option [ngValue]="region.id">{{ region.nom }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.lots.field.city') }}</span>
+            <select class="h-11 rounded-2xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:bg-white disabled:opacity-50" formControlName="villeId">
+              <option [ngValue]="null">{{ i18n.t('market.lots.field.cityPlaceholder') }}</option>
+              @for (ville of villeOptions(); track ville.id) {
+                <option [ngValue]="ville.id">{{ ville.nom }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.lots.field.location') }}</span>
+            <input class="h-11 rounded-2xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:bg-white" type="text" formControlName="localisation" [placeholder]="i18n.t('market.lots.field.locationPlaceholder')" />
+          </label>
+
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.lots.field.latitude') }}</span>
+            <input class="h-11 rounded-2xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:bg-white" type="number" step="0.000001" formControlName="latitude" />
+          </label>
+
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.lots.field.longitude') }}</span>
+            <input class="h-11 rounded-2xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:bg-white" type="number" step="0.000001" formControlName="longitude" />
+          </label>
+
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.lots.field.harvest') }}</span>
+            <input class="h-11 rounded-2xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:bg-white" type="date" formControlName="dateRecolte" />
+          </label>
+
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.lots.field.availability') }}</span>
+            <input class="h-11 rounded-2xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:bg-white" type="date" formControlName="dateDisponibilite" />
+          </label>
+
+          <label class="flex flex-col gap-2 xl:col-span-3">
+            <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.lots.field.photo') }}</span>
+            <input class="h-11 rounded-2xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:bg-white" type="text" formControlName="photoUrl" [placeholder]="i18n.t('market.lots.field.photoPlaceholder')" />
+          </label>
+
+          @if (editingLotId() === null) {
+            <label class="flex items-center gap-3 xl:col-span-3">
+              <input class="size-4 rounded border-cacao-gold" type="checkbox" formControlName="publier" />
+              <span class="text-sm font-bold text-cacao-roast">{{ i18n.t('market.lots.field.publishNow') }}</span>
+            </label>
+          }
+        </div>
+
+        <div class="mt-6 flex flex-wrap gap-3">
+          <button class="inline-flex items-center rounded-2xl bg-cacao-ink px-5 py-3 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-cacao-roast disabled:opacity-60" type="submit" [disabled]="isSaving()">
+            {{ editingLotId() === null ? i18n.t('market.lots.submitCreate') : i18n.t('market.lots.submitUpdate') }}
+          </button>
+          <button class="inline-flex items-center rounded-2xl border border-cacao-gold/40 bg-white px-5 py-3 text-sm font-extrabold text-cacao-roast transition hover:-translate-y-0.5 hover:bg-cacao-cream" type="button" (click)="closeEditor()">
+            {{ i18n.t('market.action.close') }}
+          </button>
+        </div>
+        <p class="mt-4 text-xs font-bold text-cacao-brown">{{ i18n.t('market.lots.editorHint') }}</p>
+      </form>
+    }
+
+    @if (isLoading()) {
+      <p class="mt-6 rounded-2xl bg-white px-4 py-6 text-center text-sm font-bold text-cacao-brown ring-1 ring-cacao-gold/25">{{ i18n.t('market.lots.loading') }}</p>
+    } @else if (loadFailed()) {
+      <div class="mt-6 rounded-2xl bg-white px-4 py-6 text-center ring-1 ring-rose-200">
+        <p class="text-sm font-bold text-rose-700">{{ i18n.t('market.lots.loadError') }}</p>
+      </div>
+    } @else if (lots().length === 0) {
+      <div class="mt-6 rounded-2xl bg-white px-4 py-8 text-center ring-1 ring-cacao-gold/25">
+        <p class="text-base font-black text-cacao-ink">{{ i18n.t('market.lots.empty.title') }}</p>
+        <p class="mt-2 text-sm text-cacao-brown">{{ i18n.t('market.lots.empty.description') }}</p>
+      </div>
+    } @else {
+      <div class="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        @for (lot of lots(); track lot.id) {
+          <article class="flex flex-col overflow-hidden rounded-[1.75rem] border border-cacao-gold/25 bg-white shadow-[0_12px_34px_rgba(59,33,23,0.07)]">
+            @if (lot.photoUrl) {
+              <img class="h-40 w-full object-cover" [src]="lot.photoUrl" [alt]="lot.titre" loading="lazy" />
+            } @else {
+              <div class="flex h-40 w-full items-center justify-center bg-cacao-cream">
+                <span class="text-xs font-extrabold uppercase tracking-[0.16em] text-cacao-amber">{{ i18n.t('market.lot.noPhoto') }}</span>
+              </div>
+            }
+            <div class="flex flex-1 flex-col p-5">
+              <div class="flex items-start justify-between gap-3">
+                <h2 class="text-lg font-black leading-snug tracking-[-0.03em] text-cacao-ink">{{ lot.titre }}</h2>
+                <app-market-status-chip [labelKey]="lotStatusLabel(lot.statut)" [tone]="lotStatusTone(lot.statut)" />
+              </div>
+              <p class="mt-2 text-xs font-extrabold uppercase tracking-[0.1em] text-cacao-amber">{{ lot.typeNom }} · {{ lotLabel(lot) }}</p>
+              <p class="mt-3 text-lg font-black tracking-[-0.04em] text-cacao-roast">{{ price(lot.prixKg, lot.devise) }} <span class="text-xs font-bold uppercase tracking-[0.1em] text-cacao-brown">{{ i18n.t('market.lot.perKg') }}</span></p>
+              <p class="mt-1 text-sm font-bold text-cacao-brown">{{ i18n.t('market.lot.available') }} : {{ kilograms(lot.quantiteDisponibleKg) }} / {{ kilograms(lot.quantiteKg) }}</p>
+              <p class="mt-1 text-xs font-bold text-cacao-brown">{{ i18n.t('market.lots.harvest') }} : {{ date(lot.dateRecolte) }}</p>
+
+              <div class="mt-5 flex flex-wrap gap-2">
+                <button class="rounded-2xl border border-cacao-gold/40 bg-white px-4 py-2.5 text-xs font-extrabold text-cacao-roast transition hover:bg-cacao-cream" type="button" (click)="startEdit(lot)">
+                  {{ i18n.t('market.action.edit') }}
+                </button>
+                @if (canPublish(lot)) {
+                  <button class="rounded-2xl bg-cacao-yellow px-4 py-2.5 text-xs font-extrabold text-cacao-ink transition hover:bg-cacao-gold disabled:opacity-60" type="button" [disabled]="busyLotId() !== null" (click)="publish(lot)">
+                    {{ i18n.t('market.lots.publish') }}
+                  </button>
+                }
+                @if (canSell(lot)) {
+                  <button class="rounded-2xl bg-emerald-600 px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-emerald-700 disabled:opacity-60" type="button" [disabled]="busyLotId() !== null" (click)="markSold(lot)">
+                    {{ i18n.t('market.lots.markSold') }}
+                  </button>
+                }
+                @if (canArchive(lot)) {
+                  <button class="rounded-2xl border border-cacao-gold/40 bg-white px-4 py-2.5 text-xs font-extrabold text-cacao-roast transition hover:bg-cacao-cream disabled:opacity-60" type="button" [disabled]="busyLotId() !== null" (click)="archive(lot)">
+                    {{ i18n.t('market.lots.archive') }}
+                  </button>
+                }
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </div>
+</section>

@@ -142,17 +142,21 @@ pages/dashboard/
 │   ├── overview/
 │   └── table-management/
 ├── seller/
+│   ├── lots/            # seller catalogue (create, edit, publish, archive)
+│   ├── profile/         # account + catalogue activity summary
 │   └── overview/
 ├── client/
+│   ├── catalogue/       # published lots, filters, contact the seller
+│   ├── deals/           # negotiations and visit requests
 │   └── overview/
 └── shared/
+    ├── market-conversations/   # messaging thread shared by both roles
     ├── account-settings/
-    ├── workspace-section/
     ├── dashboard-redirect.ts
     └── dashboard-shell.*
 ```
 
-Routes stay unchanged; only the lazy-import locations follow this organisation.
+Every page is a standalone component lazily loaded from [`src/app/app.routes.ts`](./src/app/app.routes.ts), behind the role guard of its workspace.
 
 ### Role navigation in the dashboard header
 
@@ -162,9 +166,22 @@ The shared `app-dashboard-header` renders the workspace title of the signed-in r
 | --- | --- |
 | `ADMINISTRATEUR` | Overview, Users, Registrations, Sessions (the last three open the corresponding `gu` table pages) |
 | `VENDEUR` | Overview, My lots, Seller profile, Messages |
-| `CLIENT` | Overview, Catalogue, Preferences, Messages |
+| `CLIENT` | Overview, Catalogue, Negotiations & visits, Messages |
 
-The navigation collapses behind a hamburger button below the `lg` breakpoint. Sections that are not implemented yet are served by the shared `workspace-section` page, which reads its title and description from the route `data` — those keys currently reuse the wording of the role overview cards. Replacing a placeholder with the real page means pointing the nav entry and the route at the new component; the same role guards (`roleGuard('VENDEUR')`, `roleGuard('CLIENT')`) apply.
+The navigation collapses behind a hamburger button below the `lg` breakpoint. Every section now opens a real page: the seller catalogue (`/dashboard/vendeur/lots`), the seller profile summary, the buyer catalogue with its filters, the transversal negotiations page and the shared messaging thread. Adding a section means editing the navigation entry, the lazy route and the translation keys — the same role guards (`roleGuard('VENDEUR')`, `roleGuard('CLIENT')`) apply.
+
+### Market API client
+
+[`src/app/core/market/`](./src/app/core/market/) holds everything the market pages share:
+
+| File | Responsibility |
+| --- | --- |
+| `market-api.service.ts` | Credentialed calls to `/api/market/*`; builds the catalogue query string from the filters. |
+| `market-models.ts` | Typed payloads returned by the API (lots, conversations, messages, negotiations, visits). |
+| `market-status.ts` | Maps the stored status codes to translation keys and badge tones, so no code is shown raw. |
+| `market-format.ts` | Locale-aware price, volume and date formatting. |
+
+The status badges themselves come from the shared `app-market-status-chip` component. A conversation is always opened from a lot, which is why the catalogue contact form and both messaging pages share the same service calls.
 
 ## Code scaffolding
 

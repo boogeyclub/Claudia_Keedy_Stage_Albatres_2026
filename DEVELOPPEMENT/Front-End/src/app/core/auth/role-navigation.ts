@@ -35,7 +35,7 @@ const WORKSPACE_NAVIGATION: Record<AuthenticatedUserRole, readonly WorkspaceNavi
   CLIENT: [
     { path: '/dashboard/client', labelKey: 'dashboard.header.overview', exact: true },
     { path: '/dashboard/client/catalogue', labelKey: 'dashboard.header.nav.catalog' },
-    { path: '/dashboard/client/preferences', labelKey: 'dashboard.header.nav.preferences' },
+    { path: '/dashboard/client/deals', labelKey: 'dashboard.header.nav.deals' },
     { path: '/dashboard/client/messages', labelKey: 'dashboard.header.nav.messages' }
   ]
 };
