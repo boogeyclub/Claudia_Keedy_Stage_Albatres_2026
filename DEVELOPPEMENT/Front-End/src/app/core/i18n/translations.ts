@@ -60,6 +60,29 @@ export const TRANSLATIONS = {
         removing: 'Completing the protected action…',
         removed: 'The protected action was completed.',
         removeFailed: 'We could not complete this protected action. Refresh and try again.'
+          errors: {
+            clientCreationRequiresRegistration: 'A buyer account must be created by the registration workflow: it records the buyer profile the API requires. Use the registration form, or the Inscriptions menu to follow those requests.',
+            clientRoleChangeRequiresProfile: 'This account is a buyer (CLIENT). Its role can only change through a deliberate buyer-profile workflow, so the type stays unchanged here.',
+            systemRoleProtected: 'Administrateur, Vendeur and Client are built-in roles: their code cannot be changed or recreated, and they cannot be deleted.',
+            userTypeInUse: 'This user type is still used by accounts or by right assignments. Reassign or remove those records first.',
+            userTypeNotLoginCapable: 'This user type cannot sign in to the application: it does not hold the APP-CONN right.',
+            userTypeCodeAlreadyExists: 'Another user type already uses this code.',
+            userTypeNameAlreadyExists: 'Another user type already uses this name.',
+            identityAlreadyExists: 'An account already uses this email address or login.',
+            enterpriseIdentifierAlreadyExists: 'Another enterprise profile already uses this NIU or RCCM.',
+            selfDeleteForbidden: 'You cannot delete the account you are signed in with.',
+            selfPrivilegeChangeForbidden: 'You cannot suspend or demote your own administrator access.',
+            lastAdministratorProtected: 'At least one active administrator account must remain. Promote or activate another administrator first.',
+            confirmationNotPending: 'Only a pending, unconfirmed registration can be cancelled.',
+            recordNotFound: 'This record no longer exists. Refresh the list to see the current data.',
+            mutationInvalid: 'One of the submitted values is not valid. Check the required formats (code, email, password length) and try again.',
+            mutationFieldForbidden: 'The request contained a field the API does not allow for this operation.',
+            tableReadOnly: 'Records cannot be created directly in this table: they come from an application workflow.',
+            tableImmutable: 'Records in this table are managed by application workflows and cannot be modified here.',
+            tableUnsupported: 'This table is not part of the administration allow-list.',
+            protectedDataConflict: 'The change conflicts with existing protected data: a unique value (code, name, email, login, NIU or RCCM) is probably already used.',
+            administratorRequired: 'An active administrator session is required for this operation.'
+          }
       },
       registration: {
         starting: 'Creating your account…',
@@ -470,6 +493,8 @@ export const TRANSLATIONS = {
           eyebrow: 'Administrator table management',
           auditOnly: 'Audit-safe view',
           back: 'Back to administrator dashboard',
+          lockedField: 'Locked: the API requires this value as is.',
+          clientAccountNotice: 'Buyer (CLIENT) accounts are not created here: the registration workflow creates them together with the legal profile the API requires. This form creates Vendeur or Administrateur accounts.',
           createEyebrow: 'New controlled record',
           editEyebrow: 'Controlled update',
           createTitle: 'Create a record',
@@ -541,6 +566,12 @@ export const TRANSLATIONS = {
           active: 'Active',
           suspended: 'Suspended',
           pending: 'Pending confirmation'
+        },
+        removal: {
+          users: 'The account, its buyer profile, its sessions and its password history are deleted together.',
+          userTypes: 'A custom user type is deleted only when no account or right assignment uses it yet.',
+          confirmations: 'Cancelling deletes the pending account created by this registration, not only the confirmation request.',
+          sessions: 'Revoking signs this browser out immediately and cannot be undone.'
         },
         values: {
           yes: 'Yes',
@@ -670,6 +701,29 @@ export const TRANSLATIONS = {
         removing: 'Exécution de l’action protégée…',
         removed: 'L’action protégée a été effectuée.',
         removeFailed: 'Nous ne pouvons pas effectuer cette action protégée. Actualisez puis réessayez.'
+          errors: {
+            clientCreationRequiresRegistration: 'Un compte acheteur doit être créé par le parcours d’inscription : c’est lui qui enregistre le profil acheteur exigé par l’API. Utilisez le formulaire d’inscription, ou le menu Inscriptions pour suivre ces demandes.',
+            clientRoleChangeRequiresProfile: 'Ce compte est un acheteur (CLIENT). Son rôle ne peut changer que par un parcours dédié au profil acheteur : le type reste donc inchangé ici.',
+            systemRoleProtected: 'Administrateur, Vendeur et Client sont des rôles intégrés : leur code ne peut être ni modifié ni recréé, et ils ne peuvent pas être supprimés.',
+            userTypeInUse: 'Ce type d’utilisateur est encore utilisé par des comptes ou des affectations de droits. Traitez d’abord ces enregistrements.',
+            userTypeNotLoginCapable: 'Ce type d’utilisateur ne peut pas se connecter à l’application : il ne possède pas le droit APP-CONN.',
+            userTypeCodeAlreadyExists: 'Un autre type d’utilisateur utilise déjà ce code.',
+            userTypeNameAlreadyExists: 'Un autre type d’utilisateur utilise déjà ce nom.',
+            identityAlreadyExists: 'Un compte utilise déjà cette adresse e-mail ou cet identifiant de connexion.',
+            enterpriseIdentifierAlreadyExists: 'Un autre profil entreprise utilise déjà ce NIU ou ce RCCM.',
+            selfDeleteForbidden: 'Vous ne pouvez pas supprimer le compte avec lequel vous êtes connecté.',
+            selfPrivilegeChangeForbidden: 'Vous ne pouvez pas suspendre ni retirer vos propres droits d’administrateur.',
+            lastAdministratorProtected: 'Au moins un compte administrateur actif doit rester disponible. Promouvez ou réactivez d’abord un autre administrateur.',
+            confirmationNotPending: 'Seule une inscription en attente et non confirmée peut être annulée.',
+            recordNotFound: 'Cet enregistrement n’existe plus. Actualisez la liste pour voir les données actuelles.',
+            mutationInvalid: 'Une des valeurs envoyées n’est pas valide. Vérifiez les formats attendus (code, e-mail, longueur du mot de passe) puis réessayez.',
+            mutationFieldForbidden: 'La requête contient un champ que l’API n’autorise pas pour cette opération.',
+            tableReadOnly: 'Aucun enregistrement ne peut être créé directement dans cette table : ils proviennent d’un flux applicatif.',
+            tableImmutable: 'Les enregistrements de cette table sont gérés par les flux applicatifs et ne peuvent pas être modifiés ici.',
+            tableUnsupported: 'Cette table ne fait pas partie de la liste autorisée de l’administration.',
+            protectedDataConflict: 'La modification entre en conflit avec des données protégées : une valeur unique (code, nom, e-mail, identifiant, NIU ou RCCM) est probablement déjà utilisée.',
+            administratorRequired: 'Une session administrateur active est nécessaire pour cette opération.'
+          }
       },
       registration: {
         starting: 'Création de votre compte…',
@@ -1080,6 +1134,8 @@ export const TRANSLATIONS = {
           eyebrow: 'Gestion des tables administrateur',
           auditOnly: 'Vue audit sécurisée',
           back: 'Retour au tableau de bord administrateur',
+          lockedField: 'Verrouillé : l’API exige cette valeur telle quelle.',
+          clientAccountNotice: 'Les comptes acheteur (CLIENT) ne se créent pas ici : le parcours d’inscription les crée avec le profil légal exigé par l’API. Ce formulaire crée des comptes Vendeur ou Administrateur.',
           createEyebrow: 'Nouvel enregistrement contrôlé',
           editEyebrow: 'Mise à jour contrôlée',
           createTitle: 'Créer un enregistrement',
@@ -1151,6 +1207,12 @@ export const TRANSLATIONS = {
           active: 'Actif',
           suspended: 'Suspendu',
           pending: 'En attente de confirmation'
+        },
+        removal: {
+          users: 'Le compte, son profil acheteur, ses sessions et son historique de mots de passe sont supprimés ensemble.',
+          userTypes: 'Un type d’utilisateur personnalisé n’est supprimé que si aucun compte ni affectation de droit ne l’utilise.',
+          confirmations: 'Annuler supprime le compte en attente créé par cette inscription, et pas seulement la demande de confirmation.',
+          sessions: 'Révoquer déconnecte immédiatement ce navigateur ; l’action est irréversible.'
         },
         values: {
           yes: 'Oui',

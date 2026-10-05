@@ -155,6 +155,20 @@ Approved table keys are `type_utilisateur`, `utilisateurs`, `client_particulier`
 
 The API keeps supporting all ten tables. The Angular dashboard deliberately exposes only the six needed for registration, user, buyer-profile, and session management; see the [frontend table-management section](../../Front-End/README.md#administrator-gu-table-management). A request for one of the other four still works for an operator who calls the API directly.
 
+Per-table operation matrix enforced by `AdminTableService` (each refusal answers an explicit `code` in the `{code, message, timestamp}` body):
+
+| Table | Create | Update | Delete |
+| --- | --- | --- | --- |
+| `type_utilisateur` | Yes, except built-in role codes | Yes; a built-in role code is immutable | Yes; refused for built-in roles (`ADMIN_SYSTEM_ROLE_PROTECTED`) and while accounts or right assignments use it (`ADMIN_USER_TYPE_IN_USE`) |
+| `utilisateurs` | Yes; `CLIENT` is refused (`ADMIN_CLIENT_CREATION_REQUIRES_REGISTRATION`) and the type must hold `APP-CONN` | Yes; changing the type into or out of `CLIENT` is refused (`ADMIN_CLIENT_ROLE_CHANGE_REQUIRES_PROFILE_WORKFLOW`) | Yes; refuses self-deletion (`ADMIN_SELF_DELETE_FORBIDDEN`) and removing the last active administrator (`ADMIN_LAST_ADMINISTRATOR_PROTECTED`) |
+| `client_particulier` | No | No | No |
+| `client_entreprise` | No | Yes (`raison_sociale`, `niu`, `rccm`) | No |
+| `registration_confirmation` | No | No | Cancels the pending registration and deletes the pending account; refused once confirmed (`ADMIN_CONFIRMATION_NOT_PENDING`) |
+| `sessions_utilisateur` | No | No | Revokes the browser session (idempotent) |
+| `password_reset`, `basic_rights`, `type_utilisateur_basic_right`, `password_history` | Not exposed in the dashboard menu | — | — |
+
+Duplicate user-type codes and names are detected before the insert/update (`ADMIN_USER_TYPE_CODE_ALREADY_EXISTS`, `ADMIN_USER_TYPE_NAME_ALREADY_EXISTS`) so the answer is actionable instead of the generic `PROTECTED_DATA_CONFLICT` raised by the database constraints. Deletions rely on `ON DELETE CASCADE` for buyer profiles, sessions and confirmation rows; `gu.password_history` has no cascade, so the service removes it explicitly first.
+
 `client_particulier` is an audit-safe profile relationship; it is created only by the buyer registration flow. `client_entreprise` exposes a tightly scoped update for `raisonSociale`, `niu`, and `rccm`, with identifier uniqueness preserved. Direct administrator creation of `CLIENT` accounts and role changes into or out of `CLIENT` are refused so an account cannot bypass or orphan its required buyer legal profile.
 
 `password_history` is read-only. Browser sessions, registration confirmations, and password resets are audit-safe views with narrowly scoped revocation/cancellation actions. Raw passwords, password hashes, browser session hashes, confirmation token hashes, and password-reset token hashes are never accepted for display or returned by these routes. The service protects built-in roles, the `APP-CONN` capability, administrator assignments, self-removal, and the final active administrator account.

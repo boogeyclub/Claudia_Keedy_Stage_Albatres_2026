@@ -85,8 +85,13 @@
 
           <form class="p-6 sm:p-8" [formGroup]="editorForm" (ngSubmit)="saveEditor()" novalidate>
             @if (mode === 'create' && currentTable.key === 'utilisateurs') {
-              <div class="mb-6 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-900">
-                {{ i18n.t('dashboard.admin.management.temporaryPasswordNotice') }}
+              <div class="mb-6 space-y-3">
+                <p class="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-900">
+                  {{ i18n.t('dashboard.admin.management.clientAccountNotice') }}
+                </p>
+                <p class="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-900">
+                  {{ i18n.t('dashboard.admin.management.temporaryPasswordNotice') }}
+                </p>
               </div>
             }
             <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -97,16 +102,18 @@
                     @if (field.required) { <span class="text-red-700" aria-hidden="true">*</span> }
                   </label>
                   @if (isSelect(field)) {
-                    <select class="w-full rounded-xl border bg-white px-3.5 py-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:ring-4 focus:ring-cacao-yellow/20" [class.border-red-400]="editorForm.get(field.key)?.invalid && editorForm.get(field.key)?.touched" [class.border-cacao-sand]="!(editorForm.get(field.key)?.invalid && editorForm.get(field.key)?.touched)" [id]="controlId(field)" [formControlName]="field.key">
+                    <select class="w-full rounded-xl border bg-white px-3.5 py-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:ring-4 focus:ring-cacao-yellow/20 disabled:cursor-not-allowed disabled:bg-cacao-cream disabled:text-cacao-brown" [class.border-red-400]="editorForm.get(field.key)?.invalid && editorForm.get(field.key)?.touched" [class.border-cacao-sand]="!(editorForm.get(field.key)?.invalid && editorForm.get(field.key)?.touched)" [id]="controlId(field)" [formControlName]="field.key" [disabled]="isFieldLocked(field)">
                       <option value="" disabled>{{ i18n.t('dashboard.admin.management.selectOption') }}</option>
                       @for (option of optionsFor(field); track option.value) {
                         <option [value]="option.value">{{ option.label }}</option>
                       }
                     </select>
                   } @else {
-                    <input class="w-full rounded-xl border bg-white px-3.5 py-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:ring-4 focus:ring-cacao-yellow/20" [class.border-red-400]="editorForm.get(field.key)?.invalid && editorForm.get(field.key)?.touched" [class.border-cacao-sand]="!(editorForm.get(field.key)?.invalid && editorForm.get(field.key)?.touched)" [id]="controlId(field)" [type]="inputType(field)" [attr.autocomplete]="field.autocomplete ?? 'off'" [attr.maxlength]="field.maxLength ?? null" [formControlName]="field.key" />
+                    <input class="w-full rounded-xl border bg-white px-3.5 py-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:ring-4 focus:ring-cacao-yellow/20 read-only:cursor-not-allowed read-only:bg-cacao-cream read-only:text-cacao-brown" [class.border-red-400]="editorForm.get(field.key)?.invalid && editorForm.get(field.key)?.touched" [class.border-cacao-sand]="!(editorForm.get(field.key)?.invalid && editorForm.get(field.key)?.touched)" [id]="controlId(field)" [type]="inputType(field)" [attr.autocomplete]="field.autocomplete ?? 'off'" [attr.maxlength]="field.maxLength ?? null" [attr.readonly]="isFieldLocked(field)" [formControlName]="field.key" />
                   }
-                  @if (editorForm.get(field.key)?.invalid && editorForm.get(field.key)?.touched) {
+                  @if (isFieldLocked(field)) {
+                    <p class="mt-1.5 text-xs font-semibold text-cacao-brown">{{ i18n.t('dashboard.admin.management.lockedField') }}</p>
+                  } @else if (editorForm.get(field.key)?.invalid && editorForm.get(field.key)?.touched) {
                     <p class="mt-1.5 text-xs font-semibold text-red-700">{{ i18n.t('dashboard.admin.management.invalidField') }}</p>
                   }
                 </div>
@@ -130,6 +137,9 @@
           <div>
             <h2 class="font-black text-red-950">{{ i18n.t('dashboard.admin.management.confirmActionTitle') }}</h2>
             <p class="mt-1 text-sm leading-6 text-red-900">{{ i18n.t('dashboard.admin.management.confirmActionDescription', { id: recordId(candidate) }) }}</p>
+            @if (currentTable.removalNoticeKey) {
+              <p class="mt-2 text-sm font-bold leading-6 text-red-950">{{ i18n.t(currentTable.removalNoticeKey) }}</p>
+            }
           </div>
           <div class="mt-4 flex shrink-0 gap-3 sm:mt-0">
             <button class="rounded-xl bg-red-700 px-4 py-2.5 text-sm font-extrabold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60" type="button" [disabled]="removingRecordId() !== null" (click)="confirmRemoval()">

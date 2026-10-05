@@ -128,13 +128,15 @@ public class AdminTableService {
 
     private void createUserType(Map<String, Object> values) {
         String code = code(values, "code", 50);
+        String name = text(values, "name", 100);
         if (SYSTEM_ROLES.contains(code)) {
             throw AuthException.conflict(
                 "ADMIN_SYSTEM_ROLE_PROTECTED",
                 "The built-in application roles cannot be recreated through the administrator console."
             );
         }
-        repository.insertUserType(code, text(values, "name", 100));
+        ensureUserTypeConfigurationAvailable(code, name, null);
+        repository.insertUserType(code, name);
     }
 
     private void updateUserType(long id, Map<String, Object> values) {
@@ -152,7 +154,28 @@ public class AdminTableService {
                 "A custom role cannot replace a built-in application role."
             );
         }
-        requireUpdated(repository.updateUserType(id, code, text(values, "name", 100)), "user type");
+        String name = text(values, "name", 100);
+        ensureUserTypeConfigurationAvailable(code, name, id);
+        requireUpdated(repository.updateUserType(id, code, name), "user type");
+    }
+
+    /**
+     * The user type code and name are unique in gu.type_utilisateur. Checking them here keeps the
+     * answer actionable instead of surfacing the generic database-conflict message.
+     */
+    private void ensureUserTypeConfigurationAvailable(String code, String name, Long excludingUserTypeId) {
+        if (repository.userTypeCodeExists(code, excludingUserTypeId)) {
+            throw AuthException.conflict(
+                "ADMIN_USER_TYPE_CODE_ALREADY_EXISTS",
+                "Another user type already uses this code."
+            );
+        }
+        if (repository.userTypeNameExists(name, excludingUserTypeId)) {
+            throw AuthException.conflict(
+                "ADMIN_USER_TYPE_NAME_ALREADY_EXISTS",
+                "Another user type already uses this name."
+            );
+        }
     }
 
     private void deleteUserType(long id) {

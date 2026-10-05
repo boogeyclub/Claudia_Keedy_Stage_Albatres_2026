@@ -178,6 +178,56 @@ class AdminTableServiceTest {
     }
 
     @Test
+    void reportsADuplicateUserTypeCodeBeforeReachingTheDatabase() {
+        when(repository.userTypeCodeExists("COOPERATIVE", null)).thenReturn(true);
+
+        AuthException exception = assertThrows(
+            AuthException.class,
+            () -> service.create(AdminTable.TYPE_UTILISATEUR, Map.of(
+                "code", "cooperative",
+                "name", "Coopérative"
+            ), 1L)
+        );
+
+        assertEquals("ADMIN_USER_TYPE_CODE_ALREADY_EXISTS", exception.getCode());
+        verify(repository, never()).insertUserType(any(), any());
+    }
+
+    @Test
+    void reportsADuplicateUserTypeNameBeforeReachingTheDatabase() {
+        when(repository.userTypeCodeExists("COOPERATIVE", null)).thenReturn(false);
+        when(repository.userTypeNameExists("Coopérative", null)).thenReturn(true);
+
+        AuthException exception = assertThrows(
+            AuthException.class,
+            () -> service.create(AdminTable.TYPE_UTILISATEUR, Map.of(
+                "code", "COOPERATIVE",
+                "name", "Coopérative"
+            ), 1L)
+        );
+
+        assertEquals("ADMIN_USER_TYPE_NAME_ALREADY_EXISTS", exception.getCode());
+        verify(repository, never()).insertUserType(any(), any());
+    }
+
+    @Test
+    void keepsTheCurrentRecordOutOfTheUserTypeUniquenessCheck() {
+        when(repository.findUserType(7L)).thenReturn(Optional.of(
+            new AdminUserTypeRecord(7L, "COOPERATIVE", "Coopérative")
+        ));
+        when(repository.userTypeCodeExists("COOPERATIVE", 7L)).thenReturn(false);
+        when(repository.userTypeNameExists("Coopérative partenaire", 7L)).thenReturn(false);
+        when(repository.updateUserType(7L, "COOPERATIVE", "Coopérative partenaire")).thenReturn(true);
+
+        service.update(AdminTable.TYPE_UTILISATEUR, "7", Map.of(
+            "code", "COOPERATIVE",
+            "name", "Coopérative partenaire"
+        ), 1L);
+
+        verify(repository).updateUserType(7L, "COOPERATIVE", "Coopérative partenaire");
+    }
+
+    @Test
     void preventsRemovalOfTheRequiredAppConnectionRightFromABuiltInRole() {
         when(repository.findUserType(3L)).thenReturn(Optional.of(new AdminUserTypeRecord(3L, "CLIENT", "Client")));
         when(repository.findBasicRightCode(1L)).thenReturn(Optional.of("APP-CONN"));

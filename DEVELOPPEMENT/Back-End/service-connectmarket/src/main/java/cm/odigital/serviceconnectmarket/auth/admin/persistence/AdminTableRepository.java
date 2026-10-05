@@ -344,6 +344,31 @@ public class AdminTableRepository {
         ) == 1;
     }
 
+    /**
+     * Mirrors the uq_type_utilisateur_code / uq_type_utilisateur_name constraints so a duplicate
+     * configuration value is answered with an explicit conflict instead of the generic protected
+     * data conflict raised by the database.
+     */
+    public boolean userTypeCodeExists(String code, Long excludingUserTypeId) {
+        return excludingUserTypeId == null
+            ? exists("SELECT EXISTS (SELECT 1 FROM gu.type_utilisateur WHERE code = ?)", code)
+            : exists(
+                "SELECT EXISTS (SELECT 1 FROM gu.type_utilisateur WHERE code = ? AND id <> ?)",
+                code,
+                excludingUserTypeId
+            );
+    }
+
+    public boolean userTypeNameExists(String name, Long excludingUserTypeId) {
+        return excludingUserTypeId == null
+            ? exists("SELECT EXISTS (SELECT 1 FROM gu.type_utilisateur WHERE tu_name = ?)", name)
+            : exists(
+                "SELECT EXISTS (SELECT 1 FROM gu.type_utilisateur WHERE tu_name = ? AND id <> ?)",
+                name,
+                excludingUserTypeId
+            );
+    }
+
     public boolean userTypeHasUtilisateurs(long id) {
         return exists("SELECT EXISTS (SELECT 1 FROM gu.utilisateurs WHERE type_utilisateur_id = ?)", id);
     }

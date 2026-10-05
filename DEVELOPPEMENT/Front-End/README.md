@@ -117,6 +117,21 @@ The password and basic-right tables are deliberately **not** exposed by the dash
 
 `client_particulier` is an audit view of the registration-managed private-buyer relationship, while `client_entreprise` allows only controlled updates to the legal company details. `sessions_utilisateur` and `registration_confirmation` remain audit-oriented with only revocation or pending-registration cancellation actions. The UI deliberately has no column or form field for password hashes, session hashes, confirmation hashes, or reset-token hashes. The server enforces the same allow-list and safety rules.
 
+#### What each menu actually allows
+
+The browser never proposes an action the API always refuses. Each table mirrors the server rules through the catalogue predicates (`canRemove`, `lockedWhen`, `excludeValues`) so the workflow stays fluid:
+
+| Menu | Create | Update | Remove / revoke | Rules kept in the UI |
+| --- | --- | --- | --- | --- |
+| Utilisateurs | Yes — `VENDEUR`/`ADMINISTRATEUR` only | Yes | Yes | CLIENT is never offered (the registration workflow owns buyer accounts); the account's type and status are locked for a CLIENT row, for your own account, and for the last active administrator; those rows cannot be deleted either |
+| Types d'utilisateur | Yes | Yes | Yes — custom types only | The `code` of a built-in role is locked and built-in roles cannot be deleted; the code pattern `^[A-Z][A-Z0-9_-]{0,49}$` is validated in the browser too |
+| Clients particuliers | No | No | No | Audit view only |
+| Clients entreprise | No | Yes — legal details | No | The update writes `raison_sociale`, `niu`, `rccm`; duplicate NIU/RCCM are rejected by the API with an explicit message |
+| Inscriptions | No | No | Yes — pending only | The action is hidden as soon as the registration is confirmed; the confirmation explains that the pending account is deleted with it |
+| Sessions | No | No | Yes — revoke | The action is hidden once the session is already invalidated |
+
+Server rejections that cannot be predicted in the browser (a custom type without the `APP-CONN` right, a role already in use, a duplicate identity) are translated from the API error code by [`admin-error-messages.ts`](./src/app/core/admin/admin-error-messages.ts) — `notifications.admin.errors.*` in both languages — instead of surfacing a generic failure message.
+
 ### Dashboard component layout
 
 Role-specific dashboard components are grouped beneath `src/app/pages/dashboard` so future features stay close to the role that owns them:
