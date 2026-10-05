@@ -107,7 +107,13 @@ public class MarketController {
         HttpServletRequest servletRequest
     ) {
         AuthenticatedSession session = sessionGuard.requireSession(servletRequest);
-        return marketService.lotDetail(lotId, session.utilisateur().id(), session.utilisateur().role());
+        Map<String, Object> detail = marketService.lotDetail(
+            lotId,
+            session.utilisateur().id(),
+            session.utilisateur().role()
+        );
+        List<Map<String, Object>> medias = cast(detail.remove("medias"));
+        return new LotDetailResponse(detail, medias);
     }
 
     @GetMapping("/vendeur/lots")
