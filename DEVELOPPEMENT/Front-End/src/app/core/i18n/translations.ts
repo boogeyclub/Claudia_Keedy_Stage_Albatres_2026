@@ -401,8 +401,6 @@ export const TRANSLATIONS = {
         secureWorkspace: 'Your workspace is protected by a browser session.'
       },
       admin: {
-        eyebrow: 'Administrator workspace',
-        title: 'Keep the CacaoMarketCM ecosystem moving with confidence.',
         description: 'Your operational home for supervising access, trade activity, and the platform experience.',
         accessCard: {
           title: 'Access governance',
@@ -1031,8 +1029,6 @@ export const TRANSLATIONS = {
         secureWorkspace: 'Votre espace est protégé par une session navigateur.'
       },
       admin: {
-        eyebrow: 'Espace administrateur',
-        title: 'Faites avancer l’écosystème CacaoMarketCM en toute confiance.',
         description: 'Votre espace opérationnel pour superviser les accès, l’activité commerciale et l’expérience de la plateforme.',
         accessCard: {
           title: 'Gouvernance des accès',
