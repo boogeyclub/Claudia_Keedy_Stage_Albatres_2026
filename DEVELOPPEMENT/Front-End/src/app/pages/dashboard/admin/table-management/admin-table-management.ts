@@ -20,8 +20,14 @@ import { TranslationService } from '../../../../core/i18n/translation.service';
 import { NotificationMessage, NotificationService } from '../../../../core/notifications/notification.service';
 
 interface EditorOption {
+  /** Value sent to the API when the form is submitted. */
   value: string;
   label: string;
+  /**
+   * Reference code behind the option (`CLIENT`, `VENDEUR`…). The submitted value is the row id, but
+   * the business rules are written with codes, so exclusions must be able to match on it.
+   */
+  code?: string;
 }
 
 type EditorMode = 'create' | 'edit';
@@ -172,7 +178,8 @@ export class AdminTableManagementComponent implements OnInit {
       next: () => {
         this.closeEditor();
         this.loadRecords();
-      }
+      },
+      error: () => undefined
     });
   }
 
@@ -231,7 +238,8 @@ export class AdminTableManagementComponent implements OnInit {
       next: () => {
         this.rowActionCandidate.set(null);
         this.loadRecords();
-      }
+      },
+      error: () => undefined
     });
   }
 
@@ -265,7 +273,8 @@ export class AdminTableManagementComponent implements OnInit {
       next: () => {
         this.removalCandidate.set(null);
         this.loadRecords();
-      }
+      },
+      error: () => undefined
     });
   }
 
@@ -422,7 +431,8 @@ export class AdminTableManagementComponent implements OnInit {
     if (!field.excludeValues || field.excludeValues.length === 0) {
       return options;
     }
-    return options.filter((option) => !field.excludeValues?.includes(option.value));
+    const excluded = field.excludeValues;
+    return options.filter((option) => !excluded.includes(option.code ?? option.value));
   }
 
   private loadEditorLookups(definition: AdminTableDefinition): void {
@@ -464,7 +474,7 @@ export class AdminTableManagementComponent implements OnInit {
       if ((typeof id !== 'number' && typeof id !== 'string') || typeof code !== 'string' || typeof name !== 'string') {
         return [];
       }
-      return [{ value: String(id), label: `${code} — ${name}` }];
+      return [{ value: String(id), label: `${code} — ${name}`, code }];
     });
   }
 

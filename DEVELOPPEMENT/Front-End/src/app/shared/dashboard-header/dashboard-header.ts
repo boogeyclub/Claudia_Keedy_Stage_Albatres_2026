@@ -115,7 +115,8 @@ export class DashboardHeaderComponent {
       next: () => {
         this.closeMenus();
         void this.router.navigateByUrl('/login');
-      }
+      },
+      error: () => undefined
     });
   }
 }

@@ -66,7 +66,8 @@ export class AccountSettingsComponent implements OnInit {
         }),
         finalize(() => this.disconnectingSessionId.set(null))
       ).subscribe({
-        next: () => void this.router.navigateByUrl('/login')
+        next: () => void this.router.navigateByUrl('/login'),
+        error: () => undefined
       });
       return;
     }
@@ -79,7 +80,8 @@ export class AccountSettingsComponent implements OnInit {
       }),
       finalize(() => this.disconnectingSessionId.set(null))
     ).subscribe({
-      next: () => this.sessions.update((items) => items.filter((item) => item.id !== session.id))
+      next: () => this.sessions.update((items) => items.filter((item) => item.id !== session.id)),
+      error: () => undefined
     });
   }
 
