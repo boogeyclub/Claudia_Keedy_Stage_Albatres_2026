@@ -308,6 +308,32 @@ public class AdminTableRepository {
         );
     }
 
+    /**
+     * Reads one account with its type code and status. Used by the administrator password reset,
+     * which needs the login and email to build the notification and the status to refuse a reset
+     * on an account that cannot sign in anyway.
+     */
+    public Optional<AdminUtilisateurRecord> findUtilisateurForPasswordReset(long id) {
+        List<AdminUtilisateurRecord> utilisateurs = jdbcTemplate.query(
+            """
+                SELECT u.id, u.email, u.prenom, u.login, u.statut, tu.code AS type_code
+                FROM gu.utilisateurs u
+                INNER JOIN gu.type_utilisateur tu ON tu.id = u.type_utilisateur_id
+                WHERE u.id = ?
+                """,
+            (resultSet, rowNumber) -> new AdminUtilisateurRecord(
+                resultSet.getLong("id"),
+                resultSet.getString("email"),
+                resultSet.getString("prenom"),
+                resultSet.getString("login"),
+                resultSet.getString("statut"),
+                resultSet.getString("type_code")
+            ),
+            id
+        );
+        return utilisateurs.stream().findFirst();
+    }
+
     public Optional<AdminUserTypeRecord> findUserType(long id) {
         List<AdminUserTypeRecord> types = jdbcTemplate.query(
             "SELECT id, code, tu_name FROM gu.type_utilisateur WHERE id = ?",

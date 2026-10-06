@@ -155,6 +155,25 @@ public class UserSessionRepository {
         );
     }
 
+    /**
+     * Revokes every active session except the one making the request, so a user who changes their
+     * own password stays signed in where they are, but no other browser keeps the old credentials.
+     */
+    public int revokeAllForUtilisateurExcept(long utilisateurId, long keptSessionId, Instant revokedAt) {
+        return jdbcTemplate.update(
+            """
+                UPDATE gu.sessions_utilisateur
+                SET invalidated_at = ?
+                WHERE utilisateur_id = ?
+                  AND id <> ?
+                  AND invalidated_at IS NULL
+                """,
+            Timestamp.from(revokedAt),
+            utilisateurId,
+            keptSessionId
+        );
+    }
+
     public List<BrowserSession> findActiveForUtilisateur(long utilisateurId, Instant now) {
         return jdbcTemplate.query(
             """

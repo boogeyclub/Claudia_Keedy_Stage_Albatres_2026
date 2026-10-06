@@ -151,7 +151,7 @@ pages/dashboard/
 │   └── overview/
 └── shared/
     ├── market-conversations/   # messaging thread shared by both roles
-    ├── account-settings/
+    ├── account-settings/       # profile, connected browsers, own password change
     ├── dashboard-redirect.ts
     └── dashboard-shell.*
 ```
@@ -169,6 +169,17 @@ The shared `app-dashboard-header` renders the workspace title of the signed-in r
 | `CLIENT` | Overview, Catalogue, Negotiations & visits, Messages |
 
 The navigation collapses behind a hamburger button below the `lg` breakpoint. Every section now opens a real page: the seller catalogue (`/dashboard/vendeur/lots`), the seller profile summary, the buyer catalogue with its filters, the transversal negotiations page and the shared messaging thread. Adding a section means editing the navigation entry, the lazy route and the translation keys — the same role guards (`roleGuard('VENDEUR')`, `roleGuard('CLIENT')`) apply.
+
+### Password features
+
+Both password workflows live in the account screens and use the API only:
+
+| Where | What it does |
+| --- | --- |
+| `/dashboard/*/account-settings` (`PasswordChangeCardComponent`) | The signed-in account changes its own password: current password required, 8 to 72 characters, confirmation field, inline mismatch message. The calling browser session stays connected, every other session of that account is revoked, and the typed values are cleared as soon as the API accepts them. |
+| `admin/table-management` on the `utilisateurs` table | The administrator gets a **Reset password** button on active accounts only. The confirmation block states that the password is generated server-side, emailed to the account owner and never displayed. The row buttons are disabled while an action runs, and the list reloads after the API confirms the reset. |
+
+Error codes are translated through [`src/app/core/admin/admin-error-messages.ts`](./src/app/core/admin/admin-error-messages.ts); the credentials email can only fail as `CREDENTIALS_MAIL_DELIVERY_UNAVAILABLE`, which the API reports *before* changing anything.
 
 ### Market API client
 

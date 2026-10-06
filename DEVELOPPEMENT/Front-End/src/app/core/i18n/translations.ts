@@ -82,7 +82,12 @@ export const TRANSLATIONS = {
           tableUnsupported: 'This table is not part of the administration allow-list.',
           protectedDataConflict: 'The change conflicts with existing protected data: a unique value (code, name, email, login, NIU or RCCM) is probably already used.',
           administratorRequired: 'An active administrator session is required for this operation.'
+          passwordResetAccountNotActive: 'Only an active account can receive new credentials. An account awaiting confirmation must confirm its registration first.',
+          passwordResetUserNotFound: 'This account no longer exists. Refresh the list and try again.',
+          credentialsMailUnavailable: 'No email could be sent: the SMTP configuration is missing or the mailbox rejected the message. Nothing was changed — no account was left without a password.',
         }
+        passwordResetSent: 'New credentials were generated and sent to the account owner.',
+        resettingPassword: 'Generating new credentials and sending them by email…',
       },
       registration: {
         starting: 'Creating your account…',
@@ -116,6 +121,10 @@ export const TRANSLATIONS = {
       language: {
         changed: 'Language changed to {{language}}.'
       }
+      passwordChange: {
+        success: 'Your password has been updated.',
+        failed: 'Your password could not be changed. Check your current password, then try again.',
+      },
     },
     landing: {
       brandTagline: 'Trade with intent',
@@ -519,6 +528,7 @@ export const TRANSLATIONS = {
           createRecord: 'Create record',
           saveChanges: 'Save changes',
           tryAgain: 'Try again'
+          resetPassword: 'Reset password',
         },
         columns: {
           id: 'ID',
@@ -574,6 +584,9 @@ export const TRANSLATIONS = {
           yes: 'Yes',
           no: 'No'
         }
+        resetPassword: {
+          notice: 'New credentials will be generated and sent to the account owner by email. Every browser session of this account will be disconnected. The password is never displayed here.',
+        },
       },
       seller: {
         eyebrow: 'Seller workspace',
@@ -637,6 +650,18 @@ export const TRANSLATIONS = {
         noSessions: 'No active browser sessions were found.',
         refreshSessions: 'Refresh sessions',
         loadingSessions: 'Loading your connected browsers…'
+        password: {
+          title: 'Change my password',
+          description: 'Enter your current password, then choose a new one of at least 8 characters. Every other browser session of your account will be disconnected.',
+          current: 'Current password',
+          new: 'New password',
+          confirm: 'Confirm the new password',
+          submit: 'Update my password',
+          show: 'Show the passwords',
+          hide: 'Hide the passwords',
+          hint: 'Your browser session stays connected; the other browsers are signed out.',
+          invalid: 'Complete the three fields, with a new password of at least 8 characters.',
+        },
       }
     },
     market: {
@@ -960,7 +985,12 @@ export const TRANSLATIONS = {
           tableUnsupported: 'Cette table ne fait pas partie de la liste autorisée de l’administration.',
           protectedDataConflict: 'La modification entre en conflit avec des données protégées : une valeur unique (code, nom, e-mail, identifiant, NIU ou RCCM) est probablement déjà utilisée.',
           administratorRequired: 'Une session administrateur active est nécessaire pour cette opération.'
+          passwordResetAccountNotActive: 'Seul un compte actif peut recevoir de nouveaux identifiants. Un compte en attente de confirmation doit d’abord confirmer son inscription.',
+          passwordResetUserNotFound: 'Ce compte n’existe plus. Rechargez la liste puis réessayez.',
+          credentialsMailUnavailable: 'Aucun e-mail n’a pu être envoyé : la configuration SMTP est absente ou la boîte a refusé le message. Rien n’a été modifié — aucun compte n’est resté sans mot de passe.',
         }
+        passwordResetSent: 'De nouveaux identifiants ont été générés et envoyés au titulaire du compte.',
+        resettingPassword: 'Génération de nouveaux identifiants et envoi par e-mail…',
       },
       registration: {
         starting: 'Création de votre compte…',
@@ -994,6 +1024,10 @@ export const TRANSLATIONS = {
       language: {
         changed: 'La langue a été changée pour {{language}}.'
       }
+      passwordChange: {
+        success: 'Votre mot de passe a été mis à jour.',
+        failed: 'Votre mot de passe n’a pas pu être changé. Vérifiez votre mot de passe actuel, puis réessayez.',
+      },
     },
     landing: {
       brandTagline: 'Le commerce avec intention',
@@ -1397,6 +1431,7 @@ export const TRANSLATIONS = {
           createRecord: 'Créer l’enregistrement',
           saveChanges: 'Enregistrer les modifications',
           tryAgain: 'Réessayer'
+          resetPassword: 'Réinitialiser le mot de passe',
         },
         columns: {
           id: 'ID',
@@ -1452,6 +1487,9 @@ export const TRANSLATIONS = {
           yes: 'Oui',
           no: 'Non'
         }
+        resetPassword: {
+          notice: 'De nouveaux identifiants seront générés et envoyés par e-mail au titulaire du compte. Toutes les sessions de navigateur de ce compte seront déconnectées. Le mot de passe n’est jamais affiché ici.',
+        },
       },
       seller: {
         eyebrow: 'Espace vendeur',
@@ -1515,6 +1553,18 @@ export const TRANSLATIONS = {
         noSessions: 'Aucune session navigateur active n’a été trouvée.',
         refreshSessions: 'Actualiser les sessions',
         loadingSessions: 'Chargement de vos navigateurs connectés…'
+        password: {
+          title: 'Changer mon mot de passe',
+          description: 'Saisissez votre mot de passe actuel, puis choisissez-en un nouveau d’au moins 8 caractères. Toutes les autres sessions de navigateur de votre compte seront déconnectées.',
+          current: 'Mot de passe actuel',
+          new: 'Nouveau mot de passe',
+          confirm: 'Confirmer le nouveau mot de passe',
+          submit: 'Mettre à jour mon mot de passe',
+          show: 'Afficher les mots de passe',
+          hide: 'Masquer les mots de passe',
+          hint: 'Votre session reste connectée ; les autres navigateurs seront déconnectés.',
+          invalid: 'Complétez les trois champs, avec un nouveau mot de passe d’au moins 8 caractères.',
+        },
       }
     },
     market: {

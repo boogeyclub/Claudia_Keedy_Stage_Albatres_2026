@@ -27,7 +27,10 @@ const BUSINESS_ERROR_KEYS: Readonly<Record<string, string>> = {
   ADMIN_TABLE_IMMUTABLE: 'notifications.admin.errors.tableImmutable',
   ADMIN_TABLE_UNSUPPORTED: 'notifications.admin.errors.tableUnsupported',
   PROTECTED_DATA_CONFLICT: 'notifications.admin.errors.protectedDataConflict',
-  ADMINISTRATOR_ACCESS_REQUIRED: 'notifications.admin.errors.administratorRequired'
+  ADMINISTRATOR_ACCESS_REQUIRED: 'notifications.admin.errors.administratorRequired',
+  ADMIN_PASSWORD_RESET_ACCOUNT_NOT_ACTIVE: 'notifications.admin.errors.passwordResetAccountNotActive',
+  ADMIN_PASSWORD_RESET_USER_NOT_FOUND: 'notifications.admin.errors.passwordResetUserNotFound',
+  CREDENTIALS_MAIL_DELIVERY_UNAVAILABLE: 'notifications.admin.errors.credentialsMailUnavailable'
 };
 
 export function businessErrorKeyFor(code: unknown): string | null {

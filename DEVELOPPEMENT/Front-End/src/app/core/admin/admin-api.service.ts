@@ -16,6 +16,15 @@ export interface AdminMutationResponse {
   message: string;
 }
 
+/** Response of the administrator password reset: it never contains the generated password. */
+export interface AdminPasswordResetResponse {
+  utilisateurId: number;
+  login: string;
+  email: string;
+  status: string;
+  message: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AdminApiService {
   private readonly http = inject(HttpClient);
@@ -35,6 +44,14 @@ export class AdminApiService {
 
   updateRecord(table: string, recordId: string, values: Record<string, unknown>): Observable<AdminMutationResponse> {
     return this.http.put<AdminMutationResponse>(`${this.tableUrl(table)}/${encodeURIComponent(recordId)}`, { values }, { withCredentials: true });
+  }
+
+  /**
+   * Runs a table-specific operation described by the catalogue (for now the administrator password
+   * reset). The path is built by the catalogue, never by a record value.
+   */
+  runRowAction(path: string): Observable<AdminMutationResponse> {
+    return this.http.post<AdminMutationResponse>(`${this.apiRoot}${path}`, {}, { withCredentials: true });
   }
 
   removeRecord(table: string, recordId: string): Observable<void> {

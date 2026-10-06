@@ -110,6 +110,31 @@ Content-Type: application/json
 
 A successful request returns `200 OK` with a `RESET` status message. Invalid, expired, already-used, or ineligible tokens are rejected; password rules and confirmation matching are also enforced by the API.
 
+### Change your own password while signed in
+
+```http
+POST /cacaomarketcm/api/auth/password/change
+Content-Type: application/json
+```
+
+```json
+{
+  "currentPassword": "the password used to sign in",
+  "newPassword": "a new secure password",
+  "confirmPassword": "a new secure password"
+}
+```
+
+The current password is mandatory, the new one must contain 8 to 72 characters and differ from the current one. A successful request returns `200 OK` with an `UPDATED` status message: the calling browser session stays connected and every other browser session of that account is revoked. Rejections use `ACCOUNT_PASSWORD_CURRENT_REQUIRED`, `ACCOUNT_PASSWORD_CURRENT_INVALID`, `ACCOUNT_PASSWORD_UNCHANGED`, `ACCOUNT_PASSWORD_TOO_SHORT`, `ACCOUNT_PASSWORD_TOO_LONG`, or `ACCOUNT_PASSWORD_UNAVAILABLE`.
+
+### Reset the password of an account (administrator)
+
+```http
+POST /cacaomarketcm/api/admin/users/{utilisateurId}/password-reset
+```
+
+An active administrator session is required (`ADMINISTRATOR_ACCESS_REQUIRED` otherwise). The API generates a 12-character password (no look-alike symbols) and **emails it to the account owner**; the password never appears in the response, in the logs, or in the administrator's browser. The mail is sent before the hash is stored, so an unusable SMTP configuration aborts the whole operation with `CREDENTIALS_MAIL_DELIVERY_UNAVAILABLE` and **nothing is changed**. Only accounts whose status is `ACTIF` are eligible (`ADMIN_PASSWORD_RESET_ACCOUNT_NOT_ACTIVE`), unknown accounts answer `ADMIN_PASSWORD_RESET_USER_NOT_FOUND`, and a successful reset revokes every browser session of that account and invalidates any pending self-service reset link.
+
 ### Login
 
 ```http
@@ -150,6 +175,7 @@ The Angular administrator workspace uses the explicitly whitelisted routes below
 | `POST` | `/cacaomarketcm/api/admin/tables/{table}` | Creates only supported user-type, user, basic-right, or type/right-assignment records. |
 | `PUT` | `/cacaomarketcm/api/admin/tables/{table}/{recordId}` | Updates only supported user-type, user, basic-right, or enterprise-profile records. |
 | `DELETE` | `/cacaomarketcm/api/admin/tables/{table}/{recordId}` | Applies the table-specific safe action: controlled removal, session/reset revocation, pending-registration cancellation, or right-assignment removal. |
+| `POST` | `/cacaomarketcm/api/admin/users/{utilisateurId}/password-reset` | Generates a temporary password, emails the new credentials to the account owner, revokes every browser session of that account, and invalidates any pending self-service reset link. The password is never returned. |
 
 Approved table keys are `type_utilisateur`, `utilisateurs`, `client_particulier`, `client_entreprise`, `sessions_utilisateur`, `registration_confirmation`, `password_reset`, `basic_rights`, `type_utilisateur_basic_right`, and `password_history`. They are an enum allow-list, not SQL identifiers supplied by a caller.
 

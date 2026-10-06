@@ -9,6 +9,7 @@ import { businessErrorKeyFor } from '../../../../core/admin/admin-error-messages
 import {
   AdminEditorControl,
   AdminRecordContext,
+  AdminRowAction,
   AdminTableColumn,
   AdminTableDefinition,
   AdminTableField,
@@ -45,6 +46,8 @@ export class AdminTableManagementComponent implements OnInit {
   protected readonly editorMode = signal<EditorMode | null>(null);
   protected readonly selectedRecord = signal<AdminRecord | null>(null);
   protected readonly removalCandidate = signal<AdminRecord | null>(null);
+  protected readonly rowActionCandidate = signal<{ record: AdminRecord; action: AdminRowAction } | null>(null);
+  protected readonly runningActionRecordId = signal<string | null>(null);
   protected readonly userTypeOptions = signal<readonly EditorOption[]>([]);
   protected readonly basicRightOptions = signal<readonly EditorOption[]>([]);
   protected editorForm: UntypedFormGroup = new UntypedFormGroup({});
@@ -179,6 +182,61 @@ export class AdminTableManagementComponent implements OnInit {
       return;
     }
     this.removalCandidate.set(record);
+  }
+
+  /** Row actions the API would accept for this record; the rest stay hidden. */
+  protected visibleRowActions(record: AdminRecord): readonly AdminRowAction[] {
+    const definition = this.table();
+    if (!definition?.rowActions) {
+      return [];
+    }
+    return definition.rowActions.filter(
+      (action) => !action.visibleWhen || action.visibleWhen(record, this.recordContext())
+    );
+  }
+
+  protected askToRunRowAction(record: AdminRecord, action: AdminRowAction): void {
+    if (this.runningActionRecordId() !== null) {
+      return;
+    }
+    this.rowActionCandidate.set({ record, action });
+  }
+
+  protected cancelRowAction(): void {
+    if (!this.runningActionRecordId()) {
+      this.rowActionCandidate.set(null);
+    }
+  }
+
+  /**
+   * Confirms a row action. Nothing about the outcome is guessed here: the API is the only place
+   * that knows whether credentials were generated and sent.
+   */
+  protected confirmRowAction(): void {
+    const candidate = this.rowActionCandidate();
+    if (!candidate || this.runningActionRecordId() !== null) {
+      return;
+    }
+
+    const recordId = this.recordId(candidate.record);
+    this.runningActionRecordId.set(recordId);
+    this.adminApi.runRowAction(candidate.action.path(recordId)).pipe(
+      this.notifications.trackApiCall({
+        start: { key: 'notifications.admin.resettingPassword' },
+        success: { key: 'notifications.admin.passwordResetSent' },
+        error: (error: unknown) => this.tableRequestFailureMessage(error, 'save')
+      }),
+      finalize(() => this.runningActionRecordId.set(null))
+    ).subscribe({
+      next: () => {
+        this.rowActionCandidate.set(null);
+        this.loadRecords();
+      }
+    });
+  }
+
+  protected isRecordRunningAction(record: AdminRecord): boolean {
+    return this.runningActionRecordId() === this.recordId(record);
   }
 
   protected cancelRemoval(): void {

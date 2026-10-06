@@ -3,6 +3,7 @@ import { Title } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthApiService, BrowserSession } from '../../../../core/auth/auth-api.service';
+import { PasswordChangeCardComponent } from './password-change-card/password-change-card';
 import { roleTranslationKeyFor } from '../../../../core/auth/auth-role';
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 import { TranslationService } from '../../../../core/i18n/translation.service';
@@ -10,6 +11,7 @@ import { NotificationService } from '../../../../core/notifications/notification
 
 @Component({
   selector: 'app-account-settings',
+  imports: [PasswordChangeCardComponent],
   templateUrl: './account-settings.html',
   styleUrl: './account-settings.css'
 })

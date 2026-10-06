@@ -109,6 +109,24 @@ public class AuthRepository {
         );
     }
 
+    /**
+     * Current BCrypt hash of an account, used to verify the password a user types before changing
+     * it. Returns empty when the account has no current password row.
+     */
+    public Optional<String> findCurrentPasswordHash(long utilisateurId) {
+        List<String> hashes = jdbcTemplate.query(
+            """
+                SELECT "password"
+                FROM gu.password_history
+                WHERE utilisateur_id = ?
+                  AND "current" = TRUE
+                """,
+            (resultSet, rowNumber) -> resultSet.getString("password"),
+            utilisateurId
+        );
+        return hashes.stream().findFirst();
+    }
+
     public void insertPasswordHash(long utilisateurId, String passwordHash, Instant insertedAt) {
         jdbcTemplate.update(
             """

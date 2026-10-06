@@ -56,12 +56,14 @@ module `market` (catalogue, messagerie, négociations, rendez-vous) et un paquet
 | `GET` | `/api/auth/registration/confirm?token=…` | Activation du compte via le lien e-mail (3 h) |
 | `POST` | `/api/auth/password-reset/request` | Demande de réinitialisation (réponse générique, e-mail seulement si compte `ACTIF`) |
 | `POST` | `/api/auth/password-reset/confirm` | Nouveau mot de passe (lien 1 h, invalide toutes les sessions) |
+| `POST` | `/api/auth/password/change` | Changement de mot de passe par l'utilisateur connecté (mot de passe actuel exigé, 8–72 caractères, session courante conservée, autres sessions révoquées) |
 | `POST` | `/api/auth/login` | Authentification, session HTTP + ligne `gu.sessions_utilisateur` |
 | `GET` | `/api/auth/session` | Restaure le profil après rafraîchissement du navigateur |
 | `GET` / `DELETE` | `/api/auth/sessions[/{id}]` | Liste / déconnecte un navigateur |
 | `POST` | `/api/auth/logout` | Déconnexion idempotente |
 | `GET` | `/api/health`, `/api/health/database` | État du service et de l'accès au schéma |
 | `GET`/`POST`/`PUT`/`DELETE` | `/api/admin/tables/{table}[/{recordId}]` | Gestion admin des 10 tables de comptes du schéma `gu` (allow-list, réservée `ADMINISTRATEUR`) — le menu du dashboard en expose 6 : inscriptions, utilisateurs, profils acheteur et sessions |
+| `POST` | `/api/admin/users/{utilisateurId}/password-reset` | Réinitialisation admin : mot de passe généré (12 caractères), envoyé par e-mail au titulaire **avant** l'écriture du hash, toutes les sessions du compte révoquées ; le mot de passe n'est jamais renvoyé ni affiché |
 | `GET` | `/api/market/reference` | Régions (avec leurs villes) et types de cacao pour les filtres |
 | `GET` | `/api/market/lots` | Catalogue public filtrable : région, ville, type de cacao, dates de récolte, date de disponibilité, prix, quantité, recherche |
 | `GET` | `/api/market/lots/{lotId}` | Détail d'un lot et de ses photos (un lot non publié reste réservé à son vendeur) |
@@ -112,7 +114,7 @@ l'origine via `APP_CORS_ALLOWED_ORIGINS`.
 | `/dashboard/client/catalogue` | Catalogue des lots publiés : filtres (région, ville, type, dates, prix, volume) et contact du vendeur |
 | `/dashboard/client/messages` | Messagerie par article (messages, négociation, rendez-vous) |
 | `/dashboard/client/deals` | Négociations et rendez-vous en cours, avec réponse directe |
-| `/dashboard/account` | Paramètres du compte et sessions navigateur actives |
+| `/dashboard/account` | Paramètres du compte : profil, changement de mot de passe, sessions navigateur actives |
 
 L'interface est **bilingue français / anglais** (`core/i18n`) et dispose d'un système de
 notifications globales (`core/notifications`). Les gardes de route (`authenticatedGuard`,

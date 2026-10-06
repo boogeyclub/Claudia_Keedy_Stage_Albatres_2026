@@ -61,6 +61,24 @@ export interface AdminRecordContext {
   readonly currentUserId: number | null;
 }
 
+/**
+ * Row action that is neither a create, an update nor a removal.
+ *
+ * The catalogue owns the label, the confirmation wording and the API path, so a table can expose a
+ * dedicated operation — currently the administrator password reset — without the management page
+ * knowing anything about that table.
+ */
+export interface AdminRowAction {
+  /** Key of the action label, used both on the button and on the confirmation button. */
+  readonly actionKey: string;
+  /** Confirmation sentence shown before the API is called. */
+  readonly noticeKey: string;
+  /** API path, relative to the configured api base URL, for one record identifier. */
+  readonly path: (recordId: string) => string;
+  /** Hides the action when the API would always refuse it. */
+  readonly visibleWhen?: (record: AdminRecord, context: AdminRecordContext) => boolean;
+}
+
 export interface AdminTableDefinition {
   key: AdminTableKey;
   schemaName: string;
@@ -72,6 +90,8 @@ export interface AdminTableDefinition {
   createFields?: readonly AdminTableField[];
   editFields?: readonly AdminTableField[];
   removeActionKey?: string;
+  /** Extra operations offered next to edit and delete, such as the password reset. */
+  rowActions?: readonly AdminRowAction[];
   /** Extra warning displayed inside the removal confirmation for this table. */
   removalNoticeKey?: string;
   isAuditOnly?: boolean;
@@ -205,7 +225,16 @@ export const ADMIN_TABLE_CATALOG: readonly AdminTableDefinition[] = [
     editFields: USER_EDIT_FIELDS,
     removeActionKey: 'dashboard.admin.actions.delete',
     removalNoticeKey: 'dashboard.admin.removal.users',
-    canRemove: (record, context) => !isSignedInAdministrator(record, context) && !isLastActiveAdministrator(record, context)
+    canRemove: (record, context) => !isSignedInAdministrator(record, context) && !isLastActiveAdministrator(record, context),
+    rowActions: [
+      {
+        actionKey: 'dashboard.admin.actions.resetPassword',
+        noticeKey: 'dashboard.admin.resetPassword.notice',
+        path: (recordId) => `/admin/users/${encodeURIComponent(recordId)}/password-reset`,
+        // Only an active account can sign in, so it is the only one that can receive credentials.
+        visibleWhen: (record) => record['statut'] === 'ACTIF'
+      }
+    ]
   },
   {
     key: 'type_utilisateur',
