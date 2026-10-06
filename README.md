@@ -136,6 +136,24 @@ conversations avec messages, deux négociations (une acceptée, une en attente) 
 visite — tous avec le mot de passe de développement `root1234`, à changer ou à supprimer avant
 tout déploiement réel.
 
+## Comptes de test
+
+Après avoir appliqué `gu.sql`, le mot de passe de **tous** ces comptes est `root1234` (stocké
+uniquement sous forme de hachage BCrypt). La connexion accepte l'identifiant **ou** l'adresse
+e-mail, sans tenir compte de la casse.
+
+| Identifiant | Adresse e-mail | Rôle | Ce que ce compte permet de tester |
+| --- | --- | --- | --- |
+| `root` | root@cacaomarket.local | Administrateur | Tableau de bord admin : utilisateurs, inscriptions, sessions. Créer un utilisateur le place en `EN_ATTENTE_CONFIRMATION` : il reçoit un lien de validation et ne peut pas se connecter avant. |
+| `vendeur.cacao` | vendeur.cacao@cacaomarket.local | Vendeur (Bernard Nkoulou) | 2 lots (un réservé, un publié), une proposition à accepter ou refuser sur le Criollo de Kribi, un message non lu, le profil vendeur. |
+| `vendeur.littoral` | vendeur.littoral@cacaomarket.local | Vendeur (Marie-Claire Etaba) | 2 lots dont un brouillon à publier, et une demande de visite en attente de la réponse du client. |
+| `client.yaounde` | client.yaounde@cacaomarket.local | Client particulier (Alice Fongang) | Le catalogue et ses filtres, un accord déjà conclu (lot réservé, volume diminué), la page négociations / rendez-vous. |
+| `client.douala` | client.douala@cacaomarket.local | Client entreprise (Paul Tchoumi, Chocolaterie du Wouri) | Catalogue, une proposition de prix en attente, une demande de visite à accepter ou refuser. |
+
+> Ces comptes et ce mot de passe sont réservés au développement local. Changez-les ou supprimez-les
+> avant tout déploiement. Réappliquer `gu.sql` ne les duplique pas : le bloc de démonstration ne
+> s'exécute que si `vendeur.cacao` n'existe pas encore.
+
 ## Démarrage local
 
 ```bash
