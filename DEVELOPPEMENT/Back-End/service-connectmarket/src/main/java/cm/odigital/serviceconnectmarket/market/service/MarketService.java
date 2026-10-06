@@ -562,7 +562,7 @@ public class MarketService {
                     routing,
                     MarketEventType.POSITION_A_VALIDER,
                     "Le créneau a été accepté. Le point GPS de la visite attend votre validation.",
-                    conversationUrl(routing, routing.clientId)
+                    conversationUrl(routing, routing.clientId())
                 );
             }
             return;
@@ -842,7 +842,7 @@ public class MarketService {
                 routing,
                 MarketEventType.VISITE_CONFIRMEE,
                 "Les deux parties ont validé le point GPS : la visite est confirmée.",
-                conversationUrl(routing, routing.clientId)
+                conversationUrl(routing, routing.clientId())
             );
             return conversationDetail(conversationId, utilisateurId);
         }

@@ -1,4 +1,5 @@
-import { Component, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -80,6 +81,7 @@ export class MarketConversationsComponent implements OnInit, OnDestroy {
   /** Visits whose pin the current user is moving (only the author may move it). */
   protected readonly movingPointFor = signal<number | null>(null);
 
+  private readonly destroyRef = inject(DestroyRef);
   private readonly marketApi = inject(MarketApiService);
   private readonly realtime = inject(MarketRealtimeService);
   private readonly authSession = inject(AuthSessionService);
@@ -140,7 +142,10 @@ export class MarketConversationsComponent implements OnInit, OnDestroy {
 
     this.loadConversations();
     this.realtime.connect();
-    this.realtime.stream.subscribe((event) => this.handleRealtimeEvent(event));
+    // The stream lives in a root service, so the subscription must die with the screen.
+    this.realtime.stream
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((event) => this.handleRealtimeEvent(event));
   }
 
   ngOnDestroy(): void {

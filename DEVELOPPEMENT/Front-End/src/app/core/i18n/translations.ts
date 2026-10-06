@@ -81,7 +81,7 @@ export const TRANSLATIONS = {
           tableImmutable: 'Records in this table are managed by application workflows and cannot be modified here.',
           tableUnsupported: 'This table is not part of the administration allow-list.',
           protectedDataConflict: 'The change conflicts with existing protected data: a unique value (code, name, email, login, NIU or RCCM) is probably already used.',
-          administratorRequired: 'An active administrator session is required for this operation.'
+          administratorRequired: 'An active administrator session is required for this operation.',
           passwordResetAccountNotActive: 'Only an active account can receive new credentials. An account awaiting confirmation must confirm its registration first.',
           passwordResetUserNotFound: 'This account no longer exists. Refresh the list and try again.',
           credentialsMailUnavailable: 'No email could be sent: the SMTP configuration is missing or the mailbox rejected the message. Nothing was changed — no account was left without a password.',
@@ -527,7 +527,7 @@ export const TRANSLATIONS = {
           cancel: 'Cancel',
           createRecord: 'Create record',
           saveChanges: 'Save changes',
-          tryAgain: 'Try again'
+          tryAgain: 'Try again',
           resetPassword: 'Reset password',
         },
         columns: {
@@ -649,7 +649,7 @@ export const TRANSLATIONS = {
         disconnectCurrent: 'Sign out this browser',
         noSessions: 'No active browser sessions were found.',
         refreshSessions: 'Refresh sessions',
-        loadingSessions: 'Loading your connected browsers…'
+        loadingSessions: 'Loading your connected browsers…',
         password: {
           title: 'Change my password',
           description: 'Enter your current password, then choose a new one of at least 8 characters. Every other browser session of your account will be disconnected.',
@@ -1052,7 +1052,7 @@ export const TRANSLATIONS = {
           tableImmutable: 'Les enregistrements de cette table sont gérés par les flux applicatifs et ne peuvent pas être modifiés ici.',
           tableUnsupported: 'Cette table ne fait pas partie de la liste autorisée de l’administration.',
           protectedDataConflict: 'La modification entre en conflit avec des données protégées : une valeur unique (code, nom, e-mail, identifiant, NIU ou RCCM) est probablement déjà utilisée.',
-          administratorRequired: 'Une session administrateur active est nécessaire pour cette opération.'
+          administratorRequired: 'Une session administrateur active est nécessaire pour cette opération.',
           passwordResetAccountNotActive: 'Seul un compte actif peut recevoir de nouveaux identifiants. Un compte en attente de confirmation doit d’abord confirmer son inscription.',
           passwordResetUserNotFound: 'Ce compte n’existe plus. Rechargez la liste puis réessayez.',
           credentialsMailUnavailable: 'Aucun e-mail n’a pu être envoyé : la configuration SMTP est absente ou la boîte a refusé le message. Rien n’a été modifié — aucun compte n’est resté sans mot de passe.',
@@ -1498,7 +1498,7 @@ export const TRANSLATIONS = {
           cancel: 'Annuler',
           createRecord: 'Créer l’enregistrement',
           saveChanges: 'Enregistrer les modifications',
-          tryAgain: 'Réessayer'
+          tryAgain: 'Réessayer',
           resetPassword: 'Réinitialiser le mot de passe',
         },
         columns: {
@@ -1620,7 +1620,7 @@ export const TRANSLATIONS = {
         disconnectCurrent: 'Se déconnecter de ce navigateur',
         noSessions: 'Aucune session navigateur active n’a été trouvée.',
         refreshSessions: 'Actualiser les sessions',
-        loadingSessions: 'Chargement de vos navigateurs connectés…'
+        loadingSessions: 'Chargement de vos navigateurs connectés…',
         password: {
           title: 'Changer mon mot de passe',
           description: 'Saisissez votre mot de passe actuel, puis choisissez-en un nouveau d’au moins 8 caractères. Toutes les autres sessions de navigateur de votre compte seront déconnectées.',

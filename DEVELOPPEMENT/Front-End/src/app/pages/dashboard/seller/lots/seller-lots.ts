@@ -61,7 +61,7 @@ export class SellerLotsComponent implements OnInit {
    */
   protected readonly lotLatitude = signal<number | null>(null);
   protected readonly lotLongitude = signal<number | null>(null);
-  protected readonly lotLabel = signal<string | null>(null);
+  protected readonly lotPointLabel = signal<string | null>(null);
 
   constructor() {
     effect(() => this.title.setTitle(`${this.i18n.t('common.brandName')} | ${this.i18n.t('market.lots.title')}`));
@@ -120,7 +120,7 @@ export class SellerLotsComponent implements OnInit {
     this.lotForm.get('villeId')?.disable();
     this.lotLatitude.set(null);
     this.lotLongitude.set(null);
-    this.lotLabel.set(null);
+    this.lotPointLabel.set(null);
     this.isEditorOpen.set(true);
   }
 
@@ -144,7 +144,7 @@ export class SellerLotsComponent implements OnInit {
     });
     this.lotLatitude.set(lot.latitude);
     this.lotLongitude.set(lot.longitude);
-    this.lotLabel.set(lot.localisation);
+    this.lotPointLabel.set(lot.localisation);
     const villeControl = this.lotForm.get('villeId');
     if (this.villeOptions().length > 0) {
       villeControl?.enable();

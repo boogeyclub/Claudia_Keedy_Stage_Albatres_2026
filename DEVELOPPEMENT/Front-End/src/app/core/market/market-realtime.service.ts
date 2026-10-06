@@ -68,8 +68,8 @@ export class MarketRealtimeService {
       this.connectionState.set('LIVE');
     });
 
-    source.addEventListener('market', (message: MessageEvent<string>) => {
-      const event = this.parse(message.data);
+    source.addEventListener('market', (message: Event) => {
+      const event = this.parse((message as MessageEvent<string>).data);
       if (event) {
         this.events.next(event);
       }
