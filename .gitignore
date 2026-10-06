@@ -109,3 +109,6 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
+
+# Local helper checks used while developing (never part of the deliverable)
+.dev-checks/

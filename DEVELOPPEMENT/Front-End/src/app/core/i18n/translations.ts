@@ -85,7 +85,7 @@ export const TRANSLATIONS = {
           passwordResetAccountNotActive: 'Only an active account can receive new credentials. An account awaiting confirmation must confirm its registration first.',
           passwordResetUserNotFound: 'This account no longer exists. Refresh the list and try again.',
           credentialsMailUnavailable: 'No email could be sent: the SMTP configuration is missing or the mailbox rejected the message. Nothing was changed — no account was left without a password.',
-        }
+        },
         passwordResetSent: 'New credentials were generated and sent to the account owner.',
         resettingPassword: 'Generating new credentials and sending them by email…',
       },
@@ -120,7 +120,7 @@ export const TRANSLATIONS = {
       },
       language: {
         changed: 'Language changed to {{language}}.'
-      }
+      },
       passwordChange: {
         success: 'Your password has been updated.',
         failed: 'Your password could not be changed. Check your current password, then try again.',
@@ -583,7 +583,7 @@ export const TRANSLATIONS = {
         values: {
           yes: 'Yes',
           no: 'No'
-        }
+        },
         resetPassword: {
           notice: 'New credentials will be generated and sent to the account owner by email. Every browser session of this account will be disconnected. The password is never displayed here.',
         },
@@ -1056,7 +1056,7 @@ export const TRANSLATIONS = {
           passwordResetAccountNotActive: 'Seul un compte actif peut recevoir de nouveaux identifiants. Un compte en attente de confirmation doit d’abord confirmer son inscription.',
           passwordResetUserNotFound: 'Ce compte n’existe plus. Rechargez la liste puis réessayez.',
           credentialsMailUnavailable: 'Aucun e-mail n’a pu être envoyé : la configuration SMTP est absente ou la boîte a refusé le message. Rien n’a été modifié — aucun compte n’est resté sans mot de passe.',
-        }
+        },
         passwordResetSent: 'De nouveaux identifiants ont été générés et envoyés au titulaire du compte.',
         resettingPassword: 'Génération de nouveaux identifiants et envoi par e-mail…',
       },
@@ -1091,7 +1091,7 @@ export const TRANSLATIONS = {
       },
       language: {
         changed: 'La langue a été changée pour {{language}}.'
-      }
+      },
       passwordChange: {
         success: 'Votre mot de passe a été mis à jour.',
         failed: 'Votre mot de passe n’a pas pu être changé. Vérifiez votre mot de passe actuel, puis réessayez.',
@@ -1554,7 +1554,7 @@ export const TRANSLATIONS = {
         values: {
           yes: 'Oui',
           no: 'Non'
-        }
+        },
         resetPassword: {
           notice: 'De nouveaux identifiants seront générés et envoyés par e-mail au titulaire du compte. Toutes les sessions de navigateur de ce compte seront déconnectées. Le mot de passe n’est jamais affiché ici.',
         },
