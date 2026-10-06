@@ -1,5 +1,5 @@
 <header class="sticky top-0 z-40 border-b border-cacao-gold/25 bg-cacao-cream/95 backdrop-blur-xl">
-  <div class="mx-auto flex min-h-20 max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+  <div class="mx-auto flex min-h-20 w-full items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
     <a
       class="group inline-flex min-w-0 items-center gap-3"
       [routerLink]="dashboardPath()"
@@ -119,7 +119,7 @@
 
   @if (navigationOpen()) {
     <nav id="workspace-navigation" class="border-t border-cacao-gold/20 bg-white/95 lg:hidden" [attr.aria-label]="i18n.t('dashboard.header.navigationMenu')">
-      <div class="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-3 sm:px-6">
+      <div class="mx-auto flex w-full flex-col gap-1 px-4 py-3 sm:px-6">
         @for (item of navigation(); track item.path) {
           <a
             class="rounded-xl px-3 py-2.5 text-sm font-bold text-cacao-brown transition hover:bg-cacao-cream hover:text-cacao-ink"

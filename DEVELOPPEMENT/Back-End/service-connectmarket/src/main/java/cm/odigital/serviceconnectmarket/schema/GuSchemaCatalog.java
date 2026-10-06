@@ -21,9 +21,9 @@ public final class GuSchemaCatalog {
     public static final String SCRIPT_RELATIVE_PATH = "DEVELOPPEMENT/Back-End/database/gu.sql";
 
     /**
-     * The nineteen relations of the {@code gu} schema together with the columns the API depends
-     * on. The order mirrors the script so that the first reported failure is the most explanatory
-     * one: the account/registration core first, then the catalogue and messaging relations.
+     * The twenty relations of the {@code gu} schema together with the columns the API depends on.
+     * The order mirrors the script so that the first reported failure is the most explanatory one:
+     * the account/registration core first, then the catalogue and messaging relations.
      */
     public static final List<GuRelation> GU_RELATIONS = List.of(
         relation("type_utilisateur", "code", "tu_name"),
@@ -49,8 +49,11 @@ public final class GuSchemaCatalog {
         relation("messages", "conversation_id", "expediteur_id", "contenu", "type", "date_envoi", "lu_at"),
         relation("negociations", "conversation_id", "proposeur_id", "prix_kg", "quantite_kg", "message",
             "statut", "date_creation", "date_reponse", "expires_at"),
-        relation("rendez_vous", "conversation_id", "proposeur_id", "date_proposee", "lieu", "note",
-            "statut", "date_creation", "date_reponse")
+        relation("rendez_vous", "conversation_id", "proposeur_id", "date_proposee", "lieu", "lieu_libelle",
+            "latitude", "longitude", "point_valide_proposeur_at", "point_valide_invite_at",
+            "note", "statut", "date_creation", "date_reponse"),
+        relation("partages_position", "conversation_id", "demandeur_id", "destinataire_id", "statut",
+            "latitude", "longitude", "libelle", "message", "date_demande", "date_reponse")
     );
 
     private static GuRelation relation(String name, String... columns) {
