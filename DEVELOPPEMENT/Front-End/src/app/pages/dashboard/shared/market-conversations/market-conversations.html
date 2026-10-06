@@ -1,236 +1,375 @@
-<section class="relative isolate overflow-hidden">
-  <div class="pointer-events-none absolute -left-28 top-0 size-80 rounded-full bg-cacao-yellow/30 blur-3xl"></div>
-  <div class="pointer-events-none absolute right-0 bottom-0 size-80 rounded-full bg-cacao-gold/20 blur-3xl"></div>
+<section class="flex h-[calc(100vh-5rem)] w-full flex-col overflow-hidden bg-cacao-cream">
+  <header class="flex flex-wrap items-center justify-between gap-3 border-b border-cacao-gold/25 bg-white/80 px-4 py-3 sm:px-6">
+    <div class="min-w-0">
+      <h1 class="truncate text-xl font-black tracking-[-0.04em] text-cacao-ink sm:text-2xl">{{ i18n.t('market.conversations.title') }}</h1>
+      <p class="mt-0.5 text-xs font-bold text-cacao-brown">{{ i18n.t('market.conversations.description') }}</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.68rem] font-extrabold uppercase tracking-[0.1em]"
+            [class.bg-emerald-100]="liveState() === 'LIVE'"
+            [class.text-emerald-800]="liveState() === 'LIVE'"
+            [class.bg-amber-100]="liveState() !== 'LIVE'"
+            [class.text-amber-800]="liveState() !== 'LIVE'">
+        <span class="size-1.5 rounded-full" [class.bg-emerald-600]="liveState() === 'LIVE'" [class.bg-amber-600]="liveState() !== 'LIVE'"></span>
+        {{ i18n.t(liveState() === 'LIVE' ? 'market.conversations.live' : 'market.conversations.connecting') }}
+      </span>
+      <button class="rounded-full bg-cacao-cream px-3 py-1.5 text-xs font-extrabold text-cacao-roast transition hover:bg-cacao-pale" type="button" (click)="reload()">
+        {{ i18n.t('market.conversations.refresh') }}
+      </button>
+    </div>
+  </header>
 
-  <div class="relative mx-auto w-full px-4 py-8 sm:px-6 sm:py-11 lg:px-8 lg:py-14">
-    <span class="inline-flex items-center gap-2 rounded-full bg-cacao-pale px-3 py-1.5 text-[0.68rem] font-extrabold uppercase tracking-[0.16em] text-cacao-roast">
-      <span class="size-1.5 rounded-full bg-cacao-amber"></span>
-      {{ i18n.t('dashboard.header.nav.messages') }}
-    </span>
-    <h1 class="mt-5 max-w-3xl text-3xl font-black leading-tight tracking-[-0.055em] text-cacao-ink sm:text-4xl">{{ i18n.t('market.conversations.title') }}</h1>
-    <p class="mt-4 max-w-3xl text-base leading-7 text-cacao-brown sm:text-lg">{{ i18n.t('market.conversations.description') }}</p>
+  <div class="grid min-h-0 flex-1 gap-3 p-3 sm:gap-4 sm:p-4 xl:grid-cols-[20rem_minmax(0,1fr)_24rem]">
+    <!-- Inbox -->
+    <aside class="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-cacao-gold/25 bg-white shadow-[0_10px_28px_rgba(59,33,23,0.06)]" aria-labelledby="inbox-title">
+      <h2 id="inbox-title" class="border-b border-cacao-gold/20 px-4 py-3 text-sm font-extrabold uppercase tracking-[0.12em] text-cacao-amber">
+        {{ i18n.t('market.conversations.inbox') }}
+      </h2>
 
-    <div class="mt-8 grid gap-6 lg:grid-cols-[22rem_1fr]">
-      <aside class="rounded-[1.75rem] border border-cacao-gold/25 bg-white p-4 shadow-[0_12px_34px_rgba(59,33,23,0.07)]" aria-labelledby="inbox-title">
-        <div class="flex items-center justify-between gap-3 px-2 py-1">
-          <h2 id="inbox-title" class="text-sm font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.conversations.inbox') }}</h2>
-          <button class="rounded-full bg-cacao-cream px-3 py-1 text-xs font-extrabold text-cacao-roast transition hover:bg-cacao-pale" type="button" (click)="reload()">{{ i18n.t('market.conversations.refresh') }}</button>
+      @if (isLoadingList()) {
+        <p class="px-4 py-6 text-center text-sm font-bold text-cacao-brown">{{ i18n.t('market.conversations.loading') }}</p>
+      } @else if (listFailed()) {
+        <p class="px-4 py-6 text-center text-sm font-bold text-rose-700">{{ i18n.t('market.conversations.listError') }}</p>
+      } @else if (conversations().length === 0) {
+        <p class="px-4 py-6 text-center text-sm text-cacao-brown">{{ i18n.t('market.conversations.empty') }}</p>
+      } @else {
+        <ul class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3">
+          @for (conversation of conversations(); track conversation.id) {
+            <li>
+              <button
+                class="w-full rounded-2xl border px-3 py-3 text-left transition hover:-translate-y-0.5 hover:bg-cacao-cream"
+                [class.border-cacao-amber]="isSelected(conversation)"
+                [class.bg-cacao-cream]="isSelected(conversation)"
+                [class.border-cacao-gold]="!isSelected(conversation)"
+                [class.bg-white]="!isSelected(conversation)"
+                type="button"
+                (click)="selectConversation(conversation.id)">
+                <div class="flex items-start justify-between gap-2">
+                  <p class="text-sm font-black leading-snug text-cacao-ink">{{ conversation.lotTitre }}</p>
+                  @if (conversation.nonLus > 0) {
+                    <span class="shrink-0 rounded-full bg-cacao-amber px-2 py-0.5 text-[0.68rem] font-extrabold text-white">{{ conversation.nonLus }}</span>
+                  }
+                </div>
+                <p class="mt-1 text-xs font-extrabold uppercase tracking-[0.08em] text-cacao-amber">{{ counterpartLabel(conversation) }}</p>
+                @if (conversation.dernierMessage) {
+                  <p class="mt-1 line-clamp-2 text-xs leading-5 text-cacao-brown">{{ conversation.dernierMessage }}</p>
+                }
+                <div class="mt-2 flex items-center justify-between gap-2">
+                  <app-market-status-chip [labelKey]="conversationStatusLabel(conversation.statut)" [tone]="conversationStatusTone(conversation.statut)" />
+                  <p class="text-[0.68rem] font-bold uppercase tracking-[0.08em] text-cacao-brown">{{ dateTime(conversation.dernierMessageAt ?? conversation.dateCreation) }}</p>
+                </div>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </aside>
+
+    <!-- Thread -->
+    <div class="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-cacao-gold/25 bg-white shadow-[0_10px_28px_rgba(59,33,23,0.06)]">
+      @if (isLoadingDetail()) {
+        <p class="grid flex-1 place-content-center px-6 text-sm font-bold text-cacao-brown">{{ i18n.t('market.conversations.loadingThread') }}</p>
+      } @else if (detail(); as thread) {
+        <header class="flex flex-wrap items-start justify-between gap-3 border-b border-cacao-gold/25 px-4 py-3">
+          <div class="min-w-0">
+            <p class="truncate text-base font-black text-cacao-ink">{{ thread.conversation.lotTitre }}</p>
+            <p class="mt-0.5 text-xs font-bold text-cacao-brown">
+              {{ counterpartLabel(thread.conversation) }} · {{ price(thread.conversation.lotPrixKg, thread.conversation.lotDevise) }} / kg
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <app-market-status-chip [labelKey]="conversationStatusLabel(thread.conversation.statut)" [tone]="conversationStatusTone(thread.conversation.statut)" />
+            <app-market-status-chip [labelKey]="lotStatusLabel(thread.conversation.lotStatut)" [tone]="lotStatusTone(thread.conversation.lotStatut)" />
+          </div>
+        </header>
+
+        <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4" data-message-list>
+          @if (thread.messages.length === 0) {
+            <p class="py-8 text-center text-sm text-cacao-brown">{{ i18n.t('market.conversations.noMessage') }}</p>
+          }
+          @for (message of thread.messages; track message.id) {
+            <article class="flex flex-col" [class.items-end]="isMine(message.expediteurId)">
+              <div class="max-w-[85%] rounded-2xl px-4 py-3 sm:max-w-[70%]"
+                   [class.bg-cacao-ink]="isMine(message.expediteurId)"
+                   [class.text-white]="isMine(message.expediteurId)"
+                   [class.bg-cacao-cream]="!isMine(message.expediteurId)"
+                   [class.text-cacao-ink]="!isMine(message.expediteurId)">
+                <p class="whitespace-pre-line text-sm leading-6">{{ message.contenu }}</p>
+              </div>
+              <p class="mt-1 text-[0.68rem] font-bold uppercase tracking-[0.08em] text-cacao-brown">{{ dateTime(message.dateEnvoi) }}</p>
+            </article>
+          }
         </div>
 
-        @if (isLoadingList()) {
-          <p class="px-2 py-6 text-center text-sm font-bold text-cacao-brown">{{ i18n.t('market.conversations.loading') }}</p>
-        } @else if (listFailed()) {
-          <p class="px-2 py-6 text-center text-sm font-bold text-rose-700">{{ i18n.t('market.conversations.listError') }}</p>
-        } @else if (conversations().length === 0) {
-          <p class="px-2 py-6 text-center text-sm text-cacao-brown">{{ i18n.t('market.conversations.empty') }}</p>
-        } @else {
-          <ul class="mt-2 flex max-h-[34rem] flex-col gap-2 overflow-y-auto pr-1">
-            @for (conversation of conversations(); track conversation.id) {
-              <li>
-                <button
-                  class="w-full rounded-2xl border px-4 py-3 text-left transition hover:-translate-y-0.5 hover:bg-cacao-cream"
-                  [class.border-cacao-amber]="isSelected(conversation)"
-                  [class.bg-cacao-cream]="isSelected(conversation)"
-                  [class.border-cacao-gold]="!isSelected(conversation)"
-                  [class.bg-white]="!isSelected(conversation)"
-                  type="button"
-                  (click)="selectConversation(conversation.id)">
-                  <div class="flex items-start justify-between gap-2">
-                    <p class="text-sm font-black leading-snug text-cacao-ink">{{ conversation.lotTitre }}</p>
-                    @if (conversation.nonLus > 0) {
-                      <span class="shrink-0 rounded-full bg-cacao-amber px-2 py-0.5 text-[0.68rem] font-extrabold text-white">{{ conversation.nonLus }}</span>
-                    }
-                  </div>
-                  <p class="mt-1 text-xs font-extrabold uppercase tracking-[0.08em] text-cacao-amber">{{ counterpartLabel(conversation) }}</p>
-                  @if (conversation.dernierMessage) {
-                    <p class="mt-1 line-clamp-2 text-xs leading-5 text-cacao-brown">{{ conversation.dernierMessage }}</p>
-                  }
-                  <p class="mt-2 text-[0.68rem] font-bold uppercase tracking-[0.08em] text-cacao-brown">{{ dateTime(conversation.dernierMessageAt ?? conversation.dateCreation) }}</p>
-                </button>
-              </li>
-            }
-          </ul>
-        }
-      </aside>
-
-      <div class="rounded-[1.75rem] border border-cacao-gold/25 bg-white p-4 shadow-[0_12px_34px_rgba(59,33,23,0.07)] sm:p-6">
-        @if (isLoadingDetail()) {
-          <p class="py-10 text-center text-sm font-bold text-cacao-brown">{{ i18n.t('market.conversations.loadingThread') }}</p>
-        } @else if (detail(); as thread) {
-          <header class="flex flex-col gap-3 border-b border-cacao-gold/25 pb-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h2 class="text-xl font-black tracking-[-0.04em] text-cacao-ink">{{ thread.conversation.lotTitre }}</h2>
-              <p class="mt-1 text-sm font-bold text-cacao-roast">{{ counterpartLabel(thread.conversation) }}</p>
-              <p class="mt-1 text-xs font-bold uppercase tracking-[0.08em] text-cacao-brown">
-                {{ price(thread.conversation.lotPrixKg, thread.conversation.lotDevise) }} · {{ i18n.t('market.lot.available') }} {{ kilograms(thread.conversation.lotQuantiteDisponibleKg) }}
-              </p>
-            </div>
-            <app-market-status-chip [labelKey]="conversationStatusLabel(thread.conversation.statut)" [tone]="conversationStatusTone(thread.conversation.statut)" />
-          </header>
-
-          <ol class="mt-5 flex max-h-[24rem] flex-col gap-3 overflow-y-auto pr-1">
-            @for (message of thread.messages; track message.id) {
-              <li class="flex" [class.justify-end]="isMine(message.expediteurId)" [class.justify-start]="!isMine(message.expediteurId)">
-                <div class="max-w-[80%] rounded-2xl px-4 py-3" [class.bg-cacao-ink]="isMine(message.expediteurId)" [class.text-white]="isMine(message.expediteurId)" [class.bg-cacao-cream]="!isMine(message.expediteurId)" [class.text-cacao-ink]="!isMine(message.expediteurId)">
-                  <p class="whitespace-pre-line text-sm leading-6">{{ message.contenu }}</p>
-                  <p class="mt-1 text-[0.68rem] font-bold uppercase tracking-[0.08em]" [class.text-cacao-sand]="isMine(message.expediteurId)" [class.text-cacao-brown]="!isMine(message.expediteurId)">{{ dateTime(message.dateEnvoi) }}</p>
-                </div>
-              </li>
-            }
-          </ol>
-
-          <form class="mt-5 border-t border-cacao-gold/25 pt-4" [formGroup]="actionsForm" (ngSubmit)="sendMessage()">
-            <label class="flex flex-col gap-2">
-              <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.conversations.messageLabel') }}</span>
-              <textarea class="min-h-24 rounded-2xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 py-2 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:bg-white" formControlName="contenu" [placeholder]="i18n.t('market.conversations.messagePlaceholder')"></textarea>
+        <form class="border-t border-cacao-gold/25 px-4 py-3" [formGroup]="actionsForm" (ngSubmit)="sendMessage()">
+          <div class="flex flex-wrap items-end gap-2">
+            <label class="flex min-w-0 flex-1 flex-col gap-1">
+              <span class="text-[0.68rem] font-extrabold uppercase tracking-[0.1em] text-cacao-amber">{{ i18n.t('market.conversations.composer') }}</span>
+              <input class="h-11 rounded-2xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:bg-white"
+                     type="text"
+                     [placeholder]="i18n.t('market.conversations.composerPlaceholder')"
+                     formControlName="contenu" />
             </label>
-            <button class="mt-3 inline-flex items-center rounded-2xl bg-cacao-ink px-5 py-3 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-cacao-roast disabled:opacity-60" type="submit" [disabled]="isBusy()">
+            <button class="inline-flex h-11 items-center rounded-2xl bg-cacao-ink px-5 text-sm font-extrabold text-white transition hover:bg-cacao-roast disabled:cursor-not-allowed disabled:opacity-60"
+                    type="submit" [disabled]="isBusy()">
+              @if (isBusy()) { <span class="mr-2 inline-block size-3 animate-spin rounded-full border-2 border-white border-r-transparent"></span> }
               {{ i18n.t('market.conversations.send') }}
             </button>
-          </form>
+          </div>
+        </form>
+      } @else {
+        <p class="grid flex-1 place-content-center px-6 text-sm text-cacao-brown">{{ i18n.t('market.conversations.selectThread') }}</p>
+      }
+    </div>
 
-          <section class="mt-6 rounded-3xl border border-cacao-gold/30 bg-cacao-cream/70 p-5" [formGroup]="actionsForm" aria-labelledby="negotiation-title">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <h3 id="negotiation-title" class="text-base font-black tracking-[-0.03em] text-cacao-ink">{{ i18n.t('market.negotiation.title') }}</h3>
-              @if (thread.negociations.length > 0) {
-                <a class="text-xs font-extrabold uppercase tracking-[0.08em] text-cacao-amber transition hover:text-cacao-roast" href="#negotiation-history">{{ i18n.t('market.negotiation.history', { count: thread.negociations.length }) }}</a>
-              }
+    <!-- Details: article, position, negotiation, visits -->
+    <aside class="flex min-h-0 flex-col gap-3 overflow-y-auto rounded-2xl border border-cacao-gold/25 bg-white p-4 shadow-[0_10px_28px_rgba(59,33,23,0.06)]">
+      @if (detail(); as thread) {
+        <section aria-labelledby="article-title">
+          <h2 id="article-title" class="text-sm font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.conversations.article') }}</h2>
+          <p class="mt-2 text-sm font-black text-cacao-ink">{{ thread.conversation.lotTitre }}</p>
+          <dl class="mt-2 grid grid-cols-2 gap-2 text-xs">
+            <div class="rounded-xl bg-cacao-cream/70 px-3 py-2">
+              <dt class="font-extrabold uppercase tracking-[0.08em] text-cacao-brown">{{ i18n.t('market.conversations.pricePerKg') }}</dt>
+              <dd class="mt-0.5 font-black text-cacao-ink">{{ price(thread.conversation.lotPrixKg, thread.conversation.lotDevise) }}</dd>
             </div>
+            <div class="rounded-xl bg-cacao-cream/70 px-3 py-2">
+              <dt class="font-extrabold uppercase tracking-[0.08em] text-cacao-brown">{{ i18n.t('market.conversations.available') }}</dt>
+              <dd class="mt-0.5 font-black text-cacao-ink">{{ kilograms(thread.conversation.lotQuantiteDisponibleKg) }}</dd>
+            </div>
+          </dl>
+        </section>
 
-            @if (openNegotiation(); as negociation) {
-              <div class="mt-4 rounded-2xl border border-cacao-gold/30 bg-white p-4">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                  <p class="text-sm font-black text-cacao-ink">{{ price(negociation.prixKg, thread.conversation.lotDevise) }} · {{ kilograms(negociation.quantiteKg) }}</p>
-                  <app-market-status-chip [labelKey]="negotiationStatusLabel(negociation.statut)" [tone]="negotiationStatusTone(negociation.statut)" />
-                </div>
-                @if (negociation.message) {
-                  <p class="mt-2 text-sm leading-6 text-cacao-brown">{{ negociation.message }}</p>
-                }
-                <p class="mt-2 text-xs font-bold text-cacao-brown">{{ i18n.t('market.negotiation.expires', { time: dateTime(negociation.expiresAt) }) }}</p>
-
-                <div class="mt-4 flex flex-wrap gap-3">
-                  @if (isCounterpart(negociation.proposeurId)) {
-                    <button class="rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-emerald-700 disabled:opacity-60" type="button" [disabled]="isBusy()" (click)="decideNegotiation(negociation, true)">
-                      {{ i18n.t('market.action.accept') }}
-                    </button>
-                    <button class="rounded-2xl bg-rose-600 px-4 py-2.5 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-rose-700 disabled:opacity-60" type="button" [disabled]="isBusy()" (click)="decideNegotiation(negociation, false)">
-                      {{ i18n.t('market.action.refuse') }}
-                    </button>
-                  } @else {
-                    <button class="rounded-2xl border border-cacao-gold/40 bg-white px-4 py-2.5 text-sm font-extrabold text-cacao-roast transition hover:-translate-y-0.5 hover:bg-cacao-cream disabled:opacity-60" type="button" [disabled]="isBusy()" (click)="cancelNegotiation(negociation)">
-                      {{ i18n.t('market.action.cancelProposal') }}
-                    </button>
-                  }
-                </div>
-              </div>
-            } @else if (canPropose()) {
-              <div class="mt-4 grid gap-4 sm:grid-cols-3">
-                <label class="flex flex-col gap-2">
-                  <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.negotiation.price') }}</span>
-                  <input class="h-11 rounded-2xl border border-cacao-gold/30 bg-white px-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber" type="number" min="1" step="1" formControlName="prixKg" />
-                </label>
-                <label class="flex flex-col gap-2">
-                  <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.negotiation.quantity') }}</span>
-                  <input class="h-11 rounded-2xl border border-cacao-gold/30 bg-white px-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber" type="number" min="1" step="1" formControlName="quantiteKg" />
-                </label>
-                <label class="flex flex-col gap-2 sm:col-span-3">
-                  <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.negotiation.message') }}</span>
-                  <input class="h-11 rounded-2xl border border-cacao-gold/30 bg-white px-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber" type="text" formControlName="negotiationMessage" [placeholder]="i18n.t('market.negotiation.messagePlaceholder')" />
-                </label>
-              </div>
-              <button class="mt-4 inline-flex items-center rounded-2xl bg-cacao-yellow px-5 py-3 text-sm font-extrabold text-cacao-ink transition hover:-translate-y-0.5 hover:bg-cacao-gold disabled:opacity-60" type="button" [disabled]="isBusy()" (click)="proposeNegotiation()">
-                {{ i18n.t('market.negotiation.propose') }}
-              </button>
-              <p class="mt-3 text-xs font-bold text-cacao-brown">{{ i18n.t('market.negotiation.hint') }}</p>
-            } @else {
-              <p class="mt-3 text-sm font-bold text-cacao-brown">{{ i18n.t('market.negotiation.locked') }}</p>
+        <!-- Exact position of the lot -->
+        <section class="border-t border-cacao-gold/20 pt-3" aria-labelledby="position-title">
+          <div class="flex items-center justify-between gap-2">
+            <h2 id="position-title" class="text-sm font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.conversations.position') }}</h2>
+            @if (positionShare(); as share) {
+              <app-market-status-chip [labelKey]="positionStatusLabel(share.statut)" [tone]="positionStatusTone(share.statut)" />
             }
-          </section>
+          </div>
 
-          <section class="mt-5 rounded-3xl border border-cacao-gold/30 bg-cacao-cream/70 p-5" [formGroup]="actionsForm" aria-labelledby="appointment-title">
-            <h3 id="appointment-title" class="text-base font-black tracking-[-0.03em] text-cacao-ink">{{ i18n.t('market.appointment.title') }}</h3>
+          @if (positionShare(); as share) {
+            <p class="mt-2 text-xs leading-5 text-cacao-brown">{{ i18n.t('market.conversations.positionHint') }}</p>
 
-            @if (openAppointment(); as rendezVous) {
-              <div class="mt-4 rounded-2xl border border-cacao-gold/30 bg-white p-4">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                  <p class="text-sm font-black text-cacao-ink">{{ dateTime(rendezVous.dateProposee) }}</p>
-                  <app-market-status-chip [labelKey]="appointmentStatusLabel(rendezVous.statut)" [tone]="appointmentStatusTone(rendezVous.statut)" />
-                </div>
-                @if (rendezVous.lieu) {
-                  <p class="mt-2 text-sm font-bold text-cacao-roast">{{ rendezVous.lieu }}</p>
-                }
-                @if (rendezVous.note) {
-                  <p class="mt-2 text-sm leading-6 text-cacao-brown">{{ rendezVous.note }}</p>
-                }
-
-                <div class="mt-4 flex flex-wrap gap-3">
-                  @if (isCounterpart(rendezVous.proposeurId)) {
-                    <button class="rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-emerald-700 disabled:opacity-60" type="button" [disabled]="isBusy()" (click)="decideAppointment(rendezVous, true)">
-                      {{ i18n.t('market.action.accept') }}
-                    </button>
-                    <button class="rounded-2xl bg-rose-600 px-4 py-2.5 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-rose-700 disabled:opacity-60" type="button" [disabled]="isBusy()" (click)="decideAppointment(rendezVous, false)">
-                      {{ i18n.t('market.action.refuse') }}
-                    </button>
-                  } @else {
-                    <button class="rounded-2xl border border-cacao-gold/40 bg-white px-4 py-2.5 text-sm font-extrabold text-cacao-roast transition hover:-translate-y-0.5 hover:bg-cacao-cream disabled:opacity-60" type="button" [disabled]="isBusy()" (click)="cancelAppointment(rendezVous)">
-                      {{ i18n.t('market.action.cancelVisit') }}
-                    </button>
-                  }
-                </div>
+            @if (share.statut === 'ACCEPTEE' && share.latitude !== null && share.longitude !== null) {
+              <div class="mt-3">
+                <app-location-map [latitude]="share.latitude" [longitude]="share.longitude" [label]="share.libelle" heightClass="h-52" />
               </div>
+              @if (share.libelle) {
+                <p class="mt-2 text-xs font-bold text-cacao-ink">{{ share.libelle }}</p>
+              }
+              @if (mustAnswerPosition() === false && share.destinataireId === currentUserId()) {
+                <button class="mt-3 w-full rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-extrabold text-rose-700 transition hover:bg-rose-50 disabled:opacity-60"
+                        type="button" [disabled]="isSharingPosition()" (click)="revokePositionShare()">
+                  {{ i18n.t('market.conversations.positionRevoke') }}
+                </button>
+              }
+            } @else if (mustAnswerPosition()) {
+              <p class="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900">{{ i18n.t('market.conversations.positionAsked') }}</p>
+              <div class="mt-3">
+                <app-location-picker
+                  [(latitude)]="shareLatitude"
+                  [(longitude)]="shareLongitude"
+                  [(label)]="shareLabel"
+                  heightClass="h-56" />
+              </div>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <button class="rounded-xl bg-cacao-ink px-4 py-2 text-xs font-extrabold text-white transition hover:bg-cacao-roast disabled:opacity-60"
+                        type="button" [disabled]="isSharingPosition()" (click)="answerPositionShare(true)">
+                  {{ i18n.t('market.conversations.positionShare') }}
+                </button>
+                <button class="rounded-xl border border-cacao-gold/40 bg-white px-4 py-2 text-xs font-extrabold text-cacao-roast transition hover:bg-cacao-cream disabled:opacity-60"
+                        type="button" [disabled]="isSharingPosition()" (click)="answerPositionShare(false)">
+                  {{ i18n.t('market.conversations.positionRefuse') }}
+                </button>
+              </div>
+            } @else if (share.statut === 'DEMANDE') {
+              <p class="mt-2 rounded-xl bg-cacao-cream px-3 py-2 text-xs font-bold text-cacao-brown">{{ i18n.t('market.conversations.positionWaiting') }}</p>
             } @else {
-              <div class="mt-4 grid gap-4 sm:grid-cols-2">
-                <label class="flex flex-col gap-2">
-                  <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.appointment.date') }}</span>
-                  <input class="h-11 rounded-2xl border border-cacao-gold/30 bg-white px-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber" type="datetime-local" formControlName="dateProposee" />
-                </label>
-                <label class="flex flex-col gap-2">
-                  <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.appointment.place') }}</span>
-                  <input class="h-11 rounded-2xl border border-cacao-gold/30 bg-white px-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber" type="text" formControlName="lieu" [placeholder]="i18n.t('market.appointment.placePlaceholder')" />
-                </label>
-                <label class="flex flex-col gap-2 sm:col-span-2">
-                  <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.appointment.note') }}</span>
-                  <input class="h-11 rounded-2xl border border-cacao-gold/30 bg-white px-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber" type="text" formControlName="note" [placeholder]="i18n.t('market.appointment.notePlaceholder')" />
-                </label>
-              </div>
-              <button class="mt-4 inline-flex items-center rounded-2xl bg-cacao-yellow px-5 py-3 text-sm font-extrabold text-cacao-ink transition hover:-translate-y-0.5 hover:bg-cacao-gold disabled:opacity-60" type="button" [disabled]="isBusy()" (click)="proposeAppointment()">
-                {{ i18n.t('market.appointment.propose') }}
-              </button>
-              <p class="mt-3 text-xs font-bold text-cacao-brown">{{ i18n.t('market.appointment.hint') }}</p>
+              <p class="mt-2 rounded-xl bg-cacao-cream px-3 py-2 text-xs font-bold text-cacao-brown">{{ i18n.t('market.conversations.positionRefusedHint') }}</p>
             }
-          </section>
+          } @else if (canRequestPosition()) {
+            <p class="mt-2 text-xs leading-5 text-cacao-brown">{{ i18n.t('market.conversations.positionIntro') }}</p>
+            <button class="mt-3 w-full rounded-xl bg-cacao-ink px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-cacao-roast disabled:opacity-60"
+                    type="button" [disabled]="isSharingPosition()" (click)="requestPositionShare()">
+              {{ i18n.t('market.conversations.positionAsk') }}
+            </button>
+          } @else {
+            <p class="mt-2 text-xs leading-5 text-cacao-brown">{{ i18n.t('market.conversations.positionIntroSeller') }}</p>
+          }
+        </section>
+
+        <!-- Negotiation -->
+        <section class="border-t border-cacao-gold/20 pt-3" aria-labelledby="negotiation-title">
+          <h2 id="negotiation-title" class="text-sm font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.conversations.negotiation') }}</h2>
+
+          @if (openNegotiation(); as negociation) {
+            <article class="mt-2 rounded-xl border border-cacao-gold/25 bg-cacao-cream/60 p-3">
+              <div class="flex items-center justify-between gap-2">
+                <p class="text-sm font-black text-cacao-ink">{{ price(negociation.prixKg, thread.conversation.lotDevise) }} / kg</p>
+                <app-market-status-chip [labelKey]="negotiationStatusLabel(negociation.statut)" [tone]="negotiationStatusTone(negociation.statut)" />
+              </div>
+              <p class="mt-1 text-xs font-bold text-cacao-brown">{{ kilograms(negociation.quantiteKg) }}</p>
+              @if (negociation.message) {
+                <p class="mt-1 text-xs leading-5 text-cacao-brown">{{ negociation.message }}</p>
+              }
+              <div class="mt-3 flex flex-wrap gap-2">
+                @if (isCounterpart(negociation.proposeurId)) {
+                  <button class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-extrabold text-white transition hover:bg-emerald-700 disabled:opacity-60" type="button" [disabled]="isBusy()" (click)="decideNegotiation(negociation, true)">{{ i18n.t('market.action.accept') }}</button>
+                  <button class="rounded-lg bg-rose-600 px-3 py-2 text-xs font-extrabold text-white transition hover:bg-rose-700 disabled:opacity-60" type="button" [disabled]="isBusy()" (click)="decideNegotiation(negociation, false)">{{ i18n.t('market.action.refuse') }}</button>
+                } @else {
+                  <button class="rounded-lg border border-cacao-gold/40 bg-white px-3 py-2 text-xs font-extrabold text-cacao-roast transition hover:bg-cacao-pale disabled:opacity-60" type="button" [disabled]="isBusy()" (click)="cancelNegotiation(negociation)">{{ i18n.t('market.action.cancel') }}</button>
+                }
+              </div>
+            </article>
+          }
+
+          @if (canPropose() && openNegotiation() === null) {
+            <form class="mt-3 grid grid-cols-2 gap-2" [formGroup]="actionsForm" (ngSubmit)="proposeNegotiation()">
+              <label class="flex flex-col gap-1">
+                <span class="text-[0.68rem] font-extrabold uppercase tracking-[0.1em] text-cacao-amber">{{ i18n.t('market.conversations.negotiationPrice') }}</span>
+                <input class="h-9 rounded-xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 text-sm font-semibold text-cacao-ink outline-none focus:border-cacao-amber focus:bg-white" type="number" min="0.01" step="0.01" formControlName="prixKg" />
+              </label>
+              <label class="flex flex-col gap-1">
+                <span class="text-[0.68rem] font-extrabold uppercase tracking-[0.1em] text-cacao-amber">{{ i18n.t('market.conversations.negotiationQuantity') }}</span>
+                <input class="h-9 rounded-xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 text-sm font-semibold text-cacao-ink outline-none focus:border-cacao-amber focus:bg-white" type="number" min="0.01" step="0.01" formControlName="quantiteKg" />
+              </label>
+              <label class="col-span-2 flex flex-col gap-1">
+                <span class="text-[0.68rem] font-extrabold uppercase tracking-[0.1em] text-cacao-amber">{{ i18n.t('market.conversations.negotiationMessage') }}</span>
+                <input class="h-9 rounded-xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 text-sm font-semibold text-cacao-ink outline-none focus:border-cacao-amber focus:bg-white" type="text" formControlName="negotiationMessage" />
+              </label>
+              <button class="col-span-2 rounded-xl bg-cacao-ink px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-cacao-roast disabled:opacity-60" type="submit" [disabled]="isBusy()">
+                {{ i18n.t('market.conversations.negotiationSubmit') }}
+              </button>
+            </form>
+          }
 
           @if (thread.negociations.length > 0) {
-            <section id="negotiation-history" class="mt-6" aria-labelledby="negotiation-history-title">
-              <h3 id="negotiation-history-title" class="text-sm font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.negotiation.historyTitle') }}</h3>
-              <ul class="mt-3 flex flex-col gap-2">
-                @for (negociation of thread.negociations; track negociation.id) {
-                  <li class="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-cacao-cream px-4 py-3">
-                    <span class="text-sm font-bold text-cacao-ink">{{ price(negociation.prixKg, thread.conversation.lotDevise) }} · {{ kilograms(negociation.quantiteKg) }} · {{ dateTime(negociation.dateCreation) }}</span>
-                    <app-market-status-chip [labelKey]="negotiationStatusLabel(negociation.statut)" [tone]="negotiationStatusTone(negociation.statut)" />
+            <ul class="mt-3 flex flex-col gap-2">
+              @for (past of thread.negociations; track past.id) {
+                @if (past.statut !== 'PROPOSEE') {
+                  <li class="flex items-center justify-between gap-2 rounded-xl bg-cacao-cream/50 px-3 py-2">
+                    <span class="text-xs font-bold text-cacao-brown">{{ price(past.prixKg, thread.conversation.lotDevise) }} · {{ kilograms(past.quantiteKg) }}</span>
+                    <app-market-status-chip [labelKey]="negotiationStatusLabel(past.statut)" [tone]="negotiationStatusTone(past.statut)" />
                   </li>
                 }
-              </ul>
-            </section>
+              }
+            </ul>
+          }
+        </section>
+
+        <!-- Visit and its GPS pin -->
+        <section class="border-t border-cacao-gold/20 pt-3" aria-labelledby="visit-title">
+          <h2 id="visit-title" class="text-sm font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.conversations.visit') }}</h2>
+
+          @if (openAppointment(); as rendezVous) {
+            <article class="mt-2 rounded-xl border border-cacao-gold/25 bg-cacao-cream/60 p-3">
+              <div class="flex items-center justify-between gap-2">
+                <p class="text-sm font-black text-cacao-ink">{{ dateTime(rendezVous.dateProposee) }}</p>
+                <app-market-status-chip [labelKey]="appointmentStatusLabel(rendezVous.statut)" [tone]="appointmentStatusTone(rendezVous.statut)" />
+              </div>
+              @if (rendezVous.lieu) {
+                <p class="mt-1 text-xs font-bold text-cacao-brown">{{ rendezVous.lieu }}</p>
+              }
+              @if (rendezVous.note) {
+                <p class="mt-1 text-xs leading-5 text-cacao-brown">{{ rendezVous.note }}</p>
+              }
+
+              @if (rendezVous.latitude !== null && rendezVous.longitude !== null) {
+                <div class="mt-3">
+                  <app-location-map [latitude]="rendezVous.latitude" [longitude]="rendezVous.longitude" [label]="rendezVous.lieuLibelle" heightClass="h-48" />
+                </div>
+                <ul class="mt-2 flex flex-wrap gap-2 text-[0.68rem] font-extrabold uppercase tracking-[0.08em]">
+                  <li class="rounded-full px-2.5 py-1" [class.bg-emerald-100]="rendezVous.pointValideProposeurAt !== null" [class.text-emerald-800]="rendezVous.pointValideProposeurAt !== null" [class.bg-white]="rendezVous.pointValideProposeurAt === null" [class.text-cacao-brown]="rendezVous.pointValideProposeurAt === null">
+                    {{ i18n.t('market.conversations.pointAuthor') }}
+                  </li>
+                  <li class="rounded-full px-2.5 py-1" [class.bg-emerald-100]="rendezVous.pointValideInviteAt !== null" [class.text-emerald-800]="rendezVous.pointValideInviteAt !== null" [class.bg-white]="rendezVous.pointValideInviteAt === null" [class.text-cacao-brown]="rendezVous.pointValideInviteAt === null">
+                    {{ i18n.t('market.conversations.pointGuest') }}
+                  </li>
+                </ul>
+              } @else {
+                <p class="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900">{{ i18n.t('market.conversations.pointMissing') }}</p>
+              }
+
+              <div class="mt-3 flex flex-wrap gap-2">
+                @if (rendezVous.statut === 'PROPOSE' && isCounterpart(rendezVous.proposeurId)) {
+                  <button class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-extrabold text-white transition hover:bg-emerald-700 disabled:opacity-60" type="button" [disabled]="isBusy()" (click)="decideAppointment(rendezVous, true)">{{ i18n.t('market.action.accept') }}</button>
+                  <button class="rounded-lg bg-rose-600 px-3 py-2 text-xs font-extrabold text-white transition hover:bg-rose-700 disabled:opacity-60" type="button" [disabled]="isBusy()" (click)="decideAppointment(rendezVous, false)">{{ i18n.t('market.action.refuse') }}</button>
+                }
+                @if (canDecidePoint(rendezVous)) {
+                  <button class="rounded-lg bg-cacao-ink px-3 py-2 text-xs font-extrabold text-white transition hover:bg-cacao-roast disabled:opacity-60" type="button" [disabled]="isBusy() || !isPointWaitingForMe(rendezVous)" (click)="decideAppointmentPoint(rendezVous, true)">{{ i18n.t('market.conversations.pointApprove') }}</button>
+                  <button class="rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs font-extrabold text-rose-700 transition hover:bg-rose-50 disabled:opacity-60" type="button" [disabled]="isBusy() || !isPointWaitingForMe(rendezVous)" (click)="decideAppointmentPoint(rendezVous, false)">{{ i18n.t('market.conversations.pointRefuse') }}</button>
+                }
+                @if (rendezVous.proposeurId === currentUserId() && rendezVous.statut !== 'CONFIRME') {
+                  <button class="rounded-lg border border-cacao-gold/40 bg-white px-3 py-2 text-xs font-extrabold text-cacao-roast transition hover:bg-cacao-pale disabled:opacity-60" type="button" [disabled]="isBusy()" (click)="togglePointMove(rendezVous)">
+                    {{ i18n.t(movingPointFor() === rendezVous.id ? 'market.conversations.pointCancelMove' : 'market.conversations.pointMove') }}
+                  </button>
+                }
+                @if (rendezVous.proposeurId === currentUserId() && rendezVous.statut !== 'CONFIRME') {
+                  <button class="rounded-lg border border-cacao-gold/40 bg-white px-3 py-2 text-xs font-extrabold text-cacao-roast transition hover:bg-cacao-pale disabled:opacity-60" type="button" [disabled]="isBusy()" (click)="cancelAppointment(rendezVous)">{{ i18n.t('market.action.cancel') }}</button>
+                }
+              </div>
+
+              @if (movingPointFor() === rendezVous.id) {
+                <div class="mt-3">
+                  <app-location-picker
+                    [(latitude)]="visitLatitude"
+                    [(longitude)]="visitLongitude"
+                    [(label)]="visitLabel"
+                    heightClass="h-56" />
+                  <button class="mt-2 w-full rounded-xl bg-cacao-ink px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-cacao-roast disabled:opacity-60"
+                          type="button" [disabled]="isBusy()" (click)="saveAppointmentPoint(rendezVous)">
+                    {{ i18n.t('market.conversations.pointSave') }}
+                  </button>
+                </div>
+              }
+            </article>
+          }
+
+          @if (canPropose() && openAppointment() === null) {
+            <form class="mt-3 flex flex-col gap-2" [formGroup]="actionsForm" (ngSubmit)="proposeAppointment()">
+              <label class="flex flex-col gap-1">
+                <span class="text-[0.68rem] font-extrabold uppercase tracking-[0.1em] text-cacao-amber">{{ i18n.t('market.conversations.visitDate') }}</span>
+                <input class="h-9 rounded-xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 text-sm font-semibold text-cacao-ink outline-none focus:border-cacao-amber focus:bg-white" type="datetime-local" formControlName="dateProposee" />
+              </label>
+              <label class="flex flex-col gap-1">
+                <span class="text-[0.68rem] font-extrabold uppercase tracking-[0.1em] text-cacao-amber">{{ i18n.t('market.conversations.visitPlace') }}</span>
+                <input class="h-9 rounded-xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 text-sm font-semibold text-cacao-ink outline-none focus:border-cacao-amber focus:bg-white" type="text" formControlName="lieu" />
+              </label>
+              <label class="flex flex-col gap-1">
+                <span class="text-[0.68rem] font-extrabold uppercase tracking-[0.1em] text-cacao-amber">{{ i18n.t('market.conversations.visitNote') }}</span>
+                <input class="h-9 rounded-xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 text-sm font-semibold text-cacao-ink outline-none focus:border-cacao-amber focus:bg-white" type="text" formControlName="note" />
+              </label>
+
+              <app-location-picker
+                [(latitude)]="visitLatitude"
+                [(longitude)]="visitLongitude"
+                [(label)]="visitLabel"
+                heightClass="h-56" />
+
+              <button class="rounded-xl bg-cacao-ink px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-cacao-roast disabled:opacity-60" type="submit" [disabled]="isBusy()">
+                {{ i18n.t('market.conversations.visitSubmit') }}
+              </button>
+            </form>
           }
 
           @if (thread.rendezVous.length > 0) {
-            <section class="mt-6" aria-labelledby="appointment-history-title">
-              <h3 id="appointment-history-title" class="text-sm font-extrabold uppercase tracking-[0.12em] text-cacao-amber">{{ i18n.t('market.appointment.historyTitle') }}</h3>
-              <ul class="mt-3 flex flex-col gap-2">
-                @for (rendezVous of thread.rendezVous; track rendezVous.id) {
-                  <li class="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-cacao-cream px-4 py-3">
-                    <span class="text-sm font-bold text-cacao-ink">{{ dateTime(rendezVous.dateProposee) }}@if (rendezVous.lieu) { · {{ rendezVous.lieu }} }</span>
-                    <app-market-status-chip [labelKey]="appointmentStatusLabel(rendezVous.statut)" [tone]="appointmentStatusTone(rendezVous.statut)" />
+            <ul class="mt-3 flex flex-col gap-2">
+              @for (past of thread.rendezVous; track past.id) {
+                @if (past.statut === 'ANNULE' || past.statut === 'REFUSE') {
+                  <li class="flex items-center justify-between gap-2 rounded-xl bg-cacao-cream/50 px-3 py-2">
+                    <span class="text-xs font-bold text-cacao-brown">{{ dateTime(past.dateProposee) }}</span>
+                    <app-market-status-chip [labelKey]="appointmentStatusLabel(past.statut)" [tone]="appointmentStatusTone(past.statut)" />
                   </li>
                 }
-              </ul>
-            </section>
+              }
+            </ul>
           }
-        } @else {
-          <p class="py-10 text-center text-sm text-cacao-brown">{{ i18n.t('market.conversations.selectThread') }}</p>
-        }
-      </div>
-    </div>
+        </section>
+      } @else {
+        <p class="text-sm text-cacao-brown">{{ i18n.t('market.conversations.selectThread') }}</p>
+      }
+    </aside>
   </div>
 </section>

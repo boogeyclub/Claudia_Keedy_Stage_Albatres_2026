@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import cm.odigital.serviceconnectmarket.auth.session.AuthenticatedSession;
 import cm.odigital.serviceconnectmarket.market.api.dto.AppointmentRequest;
@@ -29,6 +31,7 @@ import cm.odigital.serviceconnectmarket.market.api.dto.ConversationDetailRespons
 import cm.odigital.serviceconnectmarket.market.api.dto.ConversationListResponse;
 import cm.odigital.serviceconnectmarket.market.api.dto.ConversationRequest;
 import cm.odigital.serviceconnectmarket.market.api.dto.DecisionRequest;
+import cm.odigital.serviceconnectmarket.market.api.dto.GeoPointRequest;
 import cm.odigital.serviceconnectmarket.market.api.dto.LotDetailResponse;
 import cm.odigital.serviceconnectmarket.market.api.dto.LotRequest;
 import cm.odigital.serviceconnectmarket.market.api.dto.LotStatusRequest;
@@ -37,7 +40,11 @@ import cm.odigital.serviceconnectmarket.market.api.dto.MarketMutationResponse;
 import cm.odigital.serviceconnectmarket.market.api.dto.MarketReferenceResponse;
 import cm.odigital.serviceconnectmarket.market.api.dto.MessageRequest;
 import cm.odigital.serviceconnectmarket.market.api.dto.NegotiationRequest;
+import cm.odigital.serviceconnectmarket.market.api.dto.PointDecisionRequest;
+import cm.odigital.serviceconnectmarket.market.api.dto.PositionDecisionRequest;
+import cm.odigital.serviceconnectmarket.market.api.dto.PositionRequest;
 import cm.odigital.serviceconnectmarket.market.persistence.MarketRepository;
+import cm.odigital.serviceconnectmarket.market.realtime.MarketRealtimeHub;
 import cm.odigital.serviceconnectmarket.market.service.MarketService;
 
 /**
@@ -56,10 +63,29 @@ public class MarketController {
 
     private final MarketSessionGuard sessionGuard;
     private final MarketService marketService;
+    private final MarketRealtimeHub realtimeHub;
 
-    public MarketController(MarketSessionGuard sessionGuard, MarketService marketService) {
+    public MarketController(
+        MarketSessionGuard sessionGuard,
+        MarketService marketService,
+        MarketRealtimeHub realtimeHub
+    ) {
         this.sessionGuard = sessionGuard;
         this.marketService = marketService;
+        this.realtimeHub = realtimeHub;
+    }
+
+    /**
+     * Live stream of the signed-in account.
+     *
+     * <p>Server-Sent Events: the browser opens one long-lived GET and the API pushes an event as soon
+     * as something changes in one of the account threads. The session cookie authenticates the
+     * stream, exactly like the other endpoints, so no token travels in the URL.
+     */
+    @GetMapping(value = "/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter events(HttpServletRequest servletRequest) {
+        AuthenticatedSession session = sessionGuard.requireSession(servletRequest);
+        return realtimeHub.register(session.utilisateur().id());
     }
 
     @GetMapping("/reference")
@@ -297,13 +323,84 @@ public class MarketController {
         return new MarketMutationResponse(rendezVousId, "ANNULE", "Visit cancelled.");
     }
 
+    @PostMapping("/conversations/{conversationId}/position-demande")
+    public ConversationDetailResponse requestPositionShare(
+        @PathVariable long conversationId,
+        @RequestBody(required = false) @Valid PositionRequest request,
+        HttpServletRequest servletRequest
+    ) {
+        AuthenticatedSession session = sessionGuard.requireSession(servletRequest);
+        return toConversationDetail(marketService.requestPositionShare(
+            conversationId,
+            request,
+            session.utilisateur().id()
+        ));
+    }
+
+    @PostMapping("/positions/{partageId}/decision")
+    public ConversationDetailResponse decidePositionShare(
+        @PathVariable long partageId,
+        @Valid @RequestBody PositionDecisionRequest request,
+        HttpServletRequest servletRequest
+    ) {
+        AuthenticatedSession session = sessionGuard.requireSession(servletRequest);
+        return toConversationDetail(marketService.decidePositionShare(
+            partageId,
+            request,
+            session.utilisateur().id()
+        ));
+    }
+
+    @PostMapping("/positions/{partageId}/revocation")
+    public ConversationDetailResponse revokePositionShare(
+        @PathVariable long partageId,
+        HttpServletRequest servletRequest
+    ) {
+        AuthenticatedSession session = sessionGuard.requireSession(servletRequest);
+        return toConversationDetail(marketService.revokePositionShare(partageId, session.utilisateur().id()));
+    }
+
+    @PutMapping("/rendez-vous/{rendezVousId}/point")
+    public ConversationDetailResponse updateRendezVousPoint(
+        @PathVariable long rendezVousId,
+        @Valid @RequestBody GeoPointRequest request,
+        HttpServletRequest servletRequest
+    ) {
+        AuthenticatedSession session = sessionGuard.requireSession(servletRequest);
+        return toConversationDetail(marketService.updateRendezVousPoint(
+            rendezVousId,
+            request,
+            session.utilisateur().id()
+        ));
+    }
+
+    @PostMapping("/rendez-vous/{rendezVousId}/point-validation")
+    public ConversationDetailResponse decideRendezVousPoint(
+        @PathVariable long rendezVousId,
+        @Valid @RequestBody PointDecisionRequest request,
+        HttpServletRequest servletRequest
+    ) {
+        AuthenticatedSession session = sessionGuard.requireSession(servletRequest);
+        return toConversationDetail(marketService.decideRendezVousPoint(
+            rendezVousId,
+            request.approves(),
+            session.utilisateur().id()
+        ));
+    }
+
     private ConversationDetailResponse toConversationDetail(Map<String, Object> conversation) {
         return new ConversationDetailResponse(
             conversation,
             cast(conversation.get("messages")),
             cast(conversation.get("negociations")),
-            cast(conversation.get("rendezVous"))
+            cast(conversation.get("rendezVous")),
+            castMap(conversation.get("position"))
         );
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> castMap(Object value) {
+        return value == null ? null : (Map<String, Object>) value;
     }
 
     @SuppressWarnings("unchecked")

@@ -8,6 +8,7 @@ import { formatDate, formatKilograms, formatPrice } from '../../../../core/marke
 import { LotPayload, MarketLot, MarketReference } from '../../../../core/market/market-models';
 import { MarketStatusTone, lotStatus } from '../../../../core/market/market-status';
 import { NotificationService } from '../../../../core/notifications/notification.service';
+import { LocationPickerComponent } from '../../../../shared/location-picker/location-picker';
 import { MarketStatusChipComponent } from '../../../../shared/market-status-chip/market-status-chip';
 
 /**
@@ -19,7 +20,7 @@ import { MarketStatusChipComponent } from '../../../../shared/market-status-chip
  */
 @Component({
   selector: 'app-seller-lots',
-  imports: [ReactiveFormsModule, MarketStatusChipComponent],
+  imports: [ReactiveFormsModule, MarketStatusChipComponent, LocationPickerComponent],
   templateUrl: './seller-lots.html',
   styleUrl: './seller-lots.css'
 })
@@ -54,6 +55,14 @@ export class SellerLotsComponent implements OnInit {
     () => this.lots().filter((lot) => lot.statut === 'PUBLIE' || lot.statut === 'RESERVE').length
   );
 
+  /**
+   * GPS pin of the lot, kept in signals rather than in the form: it is chosen on a map, never typed.
+   * The seller can still describe the place in words with the address field.
+   */
+  protected readonly lotLatitude = signal<number | null>(null);
+  protected readonly lotLongitude = signal<number | null>(null);
+  protected readonly lotLabel = signal<string | null>(null);
+
   constructor() {
     effect(() => this.title.setTitle(`${this.i18n.t('common.brandName')} | ${this.i18n.t('market.lots.title')}`));
   }
@@ -69,8 +78,6 @@ export class SellerLotsComponent implements OnInit {
       regionId: [null, [Validators.required]],
       villeId: [{ value: null, disabled: true }],
       localisation: ['', [Validators.maxLength(200)]],
-      latitude: [null],
-      longitude: [null],
       dateRecolte: [null],
       dateDisponibilite: [null],
       photoUrl: ['', [Validators.maxLength(500)]],
@@ -105,14 +112,15 @@ export class SellerLotsComponent implements OnInit {
       regionId: null,
       villeId: null,
       localisation: '',
-      latitude: null,
-      longitude: null,
       dateRecolte: null,
       dateDisponibilite: null,
       photoUrl: '',
       publier: true
     });
     this.lotForm.get('villeId')?.disable();
+    this.lotLatitude.set(null);
+    this.lotLongitude.set(null);
+    this.lotLabel.set(null);
     this.isEditorOpen.set(true);
   }
 
@@ -129,13 +137,14 @@ export class SellerLotsComponent implements OnInit {
       regionId: lot.regionId,
       villeId: lot.villeId,
       localisation: lot.localisation ?? '',
-      latitude: lot.latitude,
-      longitude: lot.longitude,
       dateRecolte: lot.dateRecolte,
       dateDisponibilite: lot.dateDisponibilite,
       photoUrl: lot.photoUrl ?? '',
       publier: false
     });
+    this.lotLatitude.set(lot.latitude);
+    this.lotLongitude.set(lot.longitude);
+    this.lotLabel.set(lot.localisation);
     const villeControl = this.lotForm.get('villeId');
     if (this.villeOptions().length > 0) {
       villeControl?.enable();
@@ -276,8 +285,9 @@ export class SellerLotsComponent implements OnInit {
       regionId: Number(values['regionId']),
       villeId: this.number(values['villeId']),
       localisation: this.text(values['localisation']),
-      latitude: this.number(values['latitude']),
-      longitude: this.number(values['longitude']),
+      // The pin comes from the map picker, not from a hand-typed coordinate.
+      latitude: this.lotLatitude(),
+      longitude: this.lotLongitude(),
       dateRecolte: this.text(values['dateRecolte']),
       dateDisponibilite: this.text(values['dateDisponibilite']),
       photoUrl: this.text(values['photoUrl']),

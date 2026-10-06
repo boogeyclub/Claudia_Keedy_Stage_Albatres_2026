@@ -127,6 +127,26 @@ Content-Type: application/json
 
 The current password is mandatory, the new one must contain 8 to 72 characters and differ from the current one. A successful request returns `200 OK` with an `UPDATED` status message: the calling browser session stays connected and every other browser session of that account is revoked. Rejections use `ACCOUNT_PASSWORD_CURRENT_REQUIRED`, `ACCOUNT_PASSWORD_CURRENT_INVALID`, `ACCOUNT_PASSWORD_UNCHANGED`, `ACCOUNT_PASSWORD_TOO_SHORT`, `ACCOUNT_PASSWORD_TOO_LONG`, or `ACCOUNT_PASSWORD_UNAVAILABLE`.
 
+### Live messaging and GPS features
+
+Three mechanisms work together on the market side:
+
+1. **Email on the moments that start something** — the first message of a thread, a negotiation, a
+   visit proposal, a position request and a pin waiting for approval. Delivery is deliberately
+   *best effort* (`SmtpMarketMessagingService`): a missing mailbox never cancels the action, it is
+   logged and skipped. Ordinary messages inside a thread send no email.
+2. **Server-Sent Events** — `MarketRealtimeHub` keeps one stream per open tab, keyed by account, and
+   pushes a `market` event carrying the author, the article and a short preview. A slow browser only
+   loses its own stream; the event is already stored, so the screen catches up on its next request.
+   `spring.mvc.async.request-timeout` (30 min by default here) keeps the GET alive, and the hub sends
+   a heartbeat every 25 seconds.
+3. **GPS points** — the lot already carries a position, and two extra layers are added: the exact
+   position of a lot can be **requested by the buyer and shared, or refused, by the seller**
+   (`gu.partages_position`, one active row per thread), and the meeting point of a visit must be
+   **approved by both participants** before the visit becomes `CONFIRME`. Pinning a point counts as
+   the author's approval; moving the pin clears the other side's approval. The database repeats the
+   rule: `chk_rendez_vous_point` refuses a `CONFIRME` row without a pin and both approvals.
+
 ### Reset the password of an account (administrator)
 
 ```http
@@ -175,6 +195,12 @@ The Angular administrator workspace uses the explicitly whitelisted routes below
 | `POST` | `/cacaomarketcm/api/admin/tables/{table}` | Creates only supported user-type, user, basic-right, or type/right-assignment records. |
 | `PUT` | `/cacaomarketcm/api/admin/tables/{table}/{recordId}` | Updates only supported user-type, user, basic-right, or enterprise-profile records. |
 | `DELETE` | `/cacaomarketcm/api/admin/tables/{table}/{recordId}` | Applies the table-specific safe action: controlled removal, session/reset revocation, pending-registration cancellation, or right-assignment removal. |
+| `GET` | `/cacaomarketcm/api/market/events` | Server-Sent Events stream of the signed-in account: one long-lived GET, `market` events for every change and a `heartbeat` every 25 s. The session cookie authenticates it, no token in the URL. |
+| `POST` | `/cacaomarketcm/api/market/conversations/{id}/position-demande` | Buyer asking the seller to share the exact GPS point of the lot. |
+| `POST` | `/cacaomarketcm/api/market/positions/{id}/decision` | Seller answering a position request: `ACCEPTER` (the GPS point is required) or `REFUSER` (no coordinate is stored). |
+| `POST` | `/cacaomarketcm/api/market/positions/{id}/revocation` | Seller withdrawing a shared position; the pin disappears from the thread. |
+| `PUT` | `/cacaomarketcm/api/market/rendez-vous/{id}/point` | Author moving the meeting point of a visit; both approvals are cleared. |
+| `POST` | `/cacaomarketcm/api/market/rendez-vous/{id}/point-validation` | Each participant approving (`VALIDER`) or refusing (`REFUSER`) the pin. Two approvals move the visit to `CONFIRME`. |
 | `POST` | `/cacaomarketcm/api/admin/users/{utilisateurId}/password-reset` | Generates a temporary password, emails the new credentials to the account owner, revokes every browser session of that account, and invalidates any pending self-service reset link. The password is never returned. |
 
 Approved table keys are `type_utilisateur`, `utilisateurs`, `client_particulier`, `client_entreprise`, `sessions_utilisateur`, `registration_confirmation`, `password_reset`, `basic_rights`, `type_utilisateur_basic_right`, and `password_history`. They are an enum allow-list, not SQL identifiers supplied by a caller.

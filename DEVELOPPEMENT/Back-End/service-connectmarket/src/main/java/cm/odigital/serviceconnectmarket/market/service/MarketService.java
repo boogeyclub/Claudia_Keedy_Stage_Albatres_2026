@@ -4,27 +4,39 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import cm.odigital.serviceconnectmarket.auth.domain.AuthException;
 import cm.odigital.serviceconnectmarket.market.api.dto.AppointmentRequest;
+import cm.odigital.serviceconnectmarket.market.api.dto.GeoPointRequest;
 import cm.odigital.serviceconnectmarket.market.api.dto.LotRequest;
 import cm.odigital.serviceconnectmarket.market.api.dto.NegotiationRequest;
+import cm.odigital.serviceconnectmarket.market.api.dto.PositionDecisionRequest;
+import cm.odigital.serviceconnectmarket.market.api.dto.PositionRequest;
 import cm.odigital.serviceconnectmarket.market.domain.AppointmentStatus;
 import cm.odigital.serviceconnectmarket.market.domain.LotStatus;
+import cm.odigital.serviceconnectmarket.market.domain.MarketEventType;
 import cm.odigital.serviceconnectmarket.market.domain.MarketStatuses;
 import cm.odigital.serviceconnectmarket.market.domain.NegotiationStatus;
+import cm.odigital.serviceconnectmarket.market.messaging.MarketMessagingService;
+import cm.odigital.serviceconnectmarket.market.messaging.MarketNotification;
 import cm.odigital.serviceconnectmarket.market.persistence.MarketRepository;
+import cm.odigital.serviceconnectmarket.market.realtime.MarketRealtimeEvent;
+import cm.odigital.serviceconnectmarket.market.realtime.MarketRealtimeHub;
 
 /**
  * Business rules of the cocoa catalogue and of the buyer/seller exchange.
@@ -48,6 +60,10 @@ public class MarketService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MarketService.class);
     private static final String ADMINISTRATEUR_ROLE = "ADMINISTRATEUR";
+    private static final String CLIENT_ROLE = "CLIENT";
+    private static final String SELLER_MESSAGES_PATH = "/dashboard/vendeur/messages";
+    private static final String BUYER_MESSAGES_PATH = "/dashboard/client/messages";
+    private static final int PREVIEW_LENGTH = 140;
     private static final String DEFAULT_CURRENCY = "XAF";
     private static final int MAX_MESSAGE_LENGTH = 2000;
     private static final Duration NEGOTIATION_TTL = Duration.ofHours(72L);
@@ -55,10 +71,22 @@ public class MarketService {
 
     private final MarketRepository repository;
     private final Clock clock;
+    private final MarketMessagingService messagingService;
+    private final MarketRealtimeHub realtimeHub;
+    private final String frontendBaseUrl;
 
-    public MarketService(MarketRepository repository, Clock authenticationClock) {
+    public MarketService(
+        MarketRepository repository,
+        Clock authenticationClock,
+        MarketMessagingService messagingService,
+        MarketRealtimeHub realtimeHub,
+        @Value("${app.market.frontend-base-url:http://localhost:4200/CacaoMarketCM}") String frontendBaseUrl
+    ) {
         this.repository = repository;
         this.clock = authenticationClock;
+        this.messagingService = messagingService;
+        this.realtimeHub = realtimeHub;
+        this.frontendBaseUrl = frontendBaseUrl;
     }
 
     @Transactional(readOnly = true)
@@ -255,7 +283,9 @@ public class MarketService {
         }
 
         String firstMessage = optionalText(message);
-        long conversationId = repository.findConversationIdByLotAndClient(lotId, clientId)
+        Optional<Map<String, Object>> existingThread = repository.findConversationIdByLotAndClient(lotId, clientId);
+        boolean openingThread = existingThread.isEmpty();
+        long conversationId = existingThread
             .map(existing -> number(existing, "id"))
             .orElseGet(() -> {
                 long created = repository.insertConversation(lotId, clientId, number(lot, "vendeurId"));
@@ -270,6 +300,14 @@ public class MarketService {
 
         if (firstMessage != null) {
             repository.insertMessage(conversationId, clientId, firstMessage, "TEXTE", clock.instant());
+            // The very first message of a thread is the only message that also sends an email: it
+            // tells the seller someone is interested in the article. The following ones ride on the
+            // real-time stream.
+            if (openingThread) {
+                notifyOpeningMessage(conversationId, clientId, firstMessage);
+            } else {
+                publishThreadChange(conversationId, "MESSAGE", clientId, firstMessage);
+            }
         }
         return conversationDetail(conversationId, clientId);
     }
@@ -297,6 +335,8 @@ public class MarketService {
         detail.put("messages", repository.findMessages(conversationId));
         detail.put("negociations", repository.findNegociations(conversationId));
         detail.put("rendezVous", repository.findRendezVousList(conversationId));
+        // Only the participants reach this method, so the exact position of the lot can travel here.
+        detail.put("position", repository.findActivePositionPartage(conversationId).orElse(null));
         return detail;
     }
 
@@ -306,6 +346,7 @@ public class MarketService {
         requireThreadOpen(conversation);
         String message = validMessage(contenu);
         repository.insertMessage(conversationId, utilisateurId, message, "TEXTE", clock.instant());
+        publishThreadChange(conversationId, "MESSAGE", utilisateurId, message);
     }
 
     @Transactional
@@ -349,6 +390,19 @@ public class MarketService {
             utilisateurId,
             conversationId,
             negociationId
+        );
+        notifyActionStarted(
+            conversationId,
+            MarketEventType.NEGOCIATION_PROPOSEE,
+            utilisateurId,
+            "Proposition : "
+                + request.prixKg().stripTrailingZeros().toPlainString()
+                + " "
+                + String.valueOf(conversation.get("lotDevise"))
+                + "/kg pour "
+                + request.quantiteKg().stripTrailingZeros().toPlainString()
+                + " kg.",
+            "NEGOCIATION"
         );
         return negociationId;
     }
@@ -446,11 +500,21 @@ public class MarketService {
             );
         }
 
+        if (!request.hasPoint()) {
+            throw AuthException.badRequest(
+                "MARKET_APPOINTMENT_POINT_REQUIRED",
+                "Pin the meeting point on the map before proposing the visit."
+            );
+        }
+
         long rendezVousId = repository.insertRendezVous(
             conversationId,
             utilisateurId,
             request.dateProposee(),
             optionalText(request.lieu()),
+            optionalText(request.lieuLibelle()),
+            request.latitude(),
+            request.longitude(),
             optionalText(request.note()),
             clock.instant()
         );
@@ -459,6 +523,13 @@ public class MarketService {
             utilisateurId,
             conversationId,
             rendezVousId
+        );
+        notifyActionStarted(
+            conversationId,
+            MarketEventType.RENDEZ_VOUS_PROPOSE,
+            utilisateurId,
+            "Visite proposée le " + instantLabel(request.dateProposee()) + pointLabel(request.lieuLibelle()) + ".",
+            "RENDEZ_VOUS"
         );
         return rendezVousId;
     }
@@ -480,6 +551,24 @@ public class MarketService {
         if (!repository.updateRendezVousStatus(rendezVousId, status.databaseValue(), clock.instant())) {
             throw notFound("rendez-vous", "MARKET_APPOINTMENT_NOT_OPEN");
         }
+
+        MarketRepository.ConversationRouting routing = routing(conversationId);
+        if (accepted) {
+            // Accepting the slot is not enough: the pinned point still has to be approved by the
+            // invited participant before the visit is acted upon.
+            publish(routing, "RENDEZ_VOUS", utilisateurId, "Créneau accepté : le point GPS reste à valider.");
+            if (rendezVous.get("latitude") != null) {
+                sendToBoth(
+                    routing,
+                    MarketEventType.POSITION_A_VALIDER,
+                    "Le créneau a été accepté. Le point GPS de la visite attend votre validation.",
+                    conversationUrl(routing, routing.clientId)
+                );
+            }
+            return;
+        }
+
+        publish(routing, "RENDEZ_VOUS", utilisateurId, "Visite refusée.");
     }
 
     @Transactional
@@ -492,14 +581,274 @@ public class MarketService {
                 "Only the author of the visit proposal can cancel it."
             );
         }
-        requireOpenRendezVous(rendezVous);
-        if (!repository.updateRendezVousStatus(
-            rendezVousId,
-            AppointmentStatus.ANNULE.databaseValue(),
-            clock.instant()
-        )) {
+        if (!repository.cancelRendezVous(rendezVousId, clock.instant())) {
             throw notFound("rendez-vous", "MARKET_APPOINTMENT_NOT_OPEN");
         }
+        publish(
+            routing(number(rendezVous, "conversationId")),
+            "RENDEZ_VOUS",
+            utilisateurId,
+            "Visite annulée."
+        );
+    }
+
+    // ------------------------------------------------------------------ position partagée
+
+    /**
+     * The buyer asks the seller to share the exact spot of the lot.
+     *
+     * <p>The request is always made by the buyer about their own thread: the seller answers it, which
+     * is why the roles are checked here and not only in the browser.
+     */
+    @Transactional
+    public Map<String, Object> requestPositionShare(long conversationId, PositionRequest request, long utilisateurId) {
+        Map<String, Object> conversation = requireParticipantConversation(conversationId, utilisateurId);
+        requireThreadOpen(conversation);
+        if (number(conversation, "clientId") != utilisateurId) {
+            throw AuthException.forbidden(
+                "MARKET_POSITION_BUYER_ONLY",
+                "Only the buyer can ask for the exact position of the article."
+            );
+        }
+        if (repository.findActivePositionPartage(conversationId).isPresent()) {
+            throw AuthException.conflict(
+                "MARKET_POSITION_REQUEST_OPEN",
+                "A position request is already active in this conversation."
+            );
+        }
+
+        long destinataireId = number(conversation, "vendeurId");
+        long partageId = repository.insertPositionDemande(
+            conversationId,
+            utilisateurId,
+            destinataireId,
+            optionalText(request == null ? null : request.message()),
+            clock.instant()
+        );
+        LOGGER.info(
+            "event=market.position.requested utilisateurId={} conversationId={} partageId={}",
+            utilisateurId,
+            conversationId,
+            partageId
+        );
+        notifyActionStarted(
+            conversationId,
+            MarketEventType.POSITION_DEMANDEE,
+            utilisateurId,
+            "L'acheteur demande la position exacte du lot : vous pouvez la partager ou refuser.",
+            "POSITION"
+        );
+        return conversationDetail(conversationId, utilisateurId);
+    }
+
+    /** The seller answers a position request: share the exact spot, or refuse it. */
+    @Transactional
+    public Map<String, Object> decidePositionShare(long partageId, PositionDecisionRequest request, long utilisateurId) {
+        Map<String, Object> partage = requirePositionPartage(partageId);
+        long conversationId = number(partage, "conversationId");
+        Map<String, Object> conversation = requireParticipantConversation(conversationId, utilisateurId);
+        if (number(partage, "destinataireId") != utilisateurId) {
+            throw AuthException.forbidden(
+                "MARKET_POSITION_NOT_RECIPIENT",
+                "Only the participant who received the request can answer it."
+            );
+        }
+        if (!"DEMANDE".equals(partage.get("statut"))) {
+            throw AuthException.conflict(
+                "MARKET_POSITION_NOT_PENDING",
+                "This position request has already been answered."
+            );
+        }
+
+        Instant now = clock.instant();
+        if (request.accepts()) {
+            if (request.latitude() == null || request.longitude() == null) {
+                throw AuthException.badRequest(
+                    "MARKET_POSITION_POINT_REQUIRED",
+                    "Sharing a position requires the GPS point."
+                );
+            }
+            if (!repository.updatePositionPartageDecision(
+                partageId,
+                "ACCEPTEE",
+                request.latitude(),
+                request.longitude(),
+                optionalText(request.libelle()),
+                now
+            )) {
+                throw notFound("position", "MARKET_POSITION_NOT_PENDING");
+            }
+        } else if (!repository.updatePositionPartageDecision(partageId, "REFUSEE", null, null, null, now)) {
+            throw notFound("position", "MARKET_POSITION_NOT_PENDING");
+        }
+
+        LOGGER.info(
+            "event=market.position.answered utilisateurId={} conversationId={} partageId={} statut={}",
+            utilisateurId,
+            conversationId,
+            partageId,
+            request.accepts() ? "ACCEPTEE" : "REFUSEE"
+        );
+        publish(
+            routing(conversationId),
+            "POSITION",
+            utilisateurId,
+            request.accepts() ? "Position exacte partagée." : "Demande de position refusée."
+        );
+        return conversationDetail(conversationId, utilisateurId);
+    }
+
+    /** The seller withdraws a shared position; the pin disappears from the thread. */
+    @Transactional
+    public Map<String, Object> revokePositionShare(long partageId, long utilisateurId) {
+        Map<String, Object> partage = requirePositionPartage(partageId);
+        long conversationId = number(partage, "conversationId");
+        requireParticipantConversation(conversationId, utilisateurId);
+        if (number(partage, "destinataireId") != utilisateurId) {
+            throw AuthException.forbidden(
+                "MARKET_POSITION_NOT_RECIPIENT",
+                "Only the participant who shared the position can withdraw it."
+            );
+        }
+        if (!repository.revokePositionPartage(partageId, clock.instant())) {
+            throw AuthException.conflict(
+                "MARKET_POSITION_NOT_SHARED",
+                "This position is not currently shared."
+            );
+        }
+        LOGGER.info(
+            "event=market.position.revoked utilisateurId={} conversationId={} partageId={}",
+            utilisateurId,
+            conversationId,
+            partageId
+        );
+        publish(routing(conversationId), "POSITION", utilisateurId, "Partage de position retiré.");
+        return conversationDetail(conversationId, utilisateurId);
+    }
+
+    // ------------------------------------------------------------------ point GPS de la visite
+
+    /** The author of a visit moves its GPS pin; the invited participant must approve it again. */
+    @Transactional
+    public Map<String, Object> updateRendezVousPoint(long rendezVousId, GeoPointRequest request, long utilisateurId) {
+        Map<String, Object> rendezVous = requireRendezVous(rendezVousId);
+        long conversationId = number(rendezVous, "conversationId");
+        requireParticipantConversation(conversationId, utilisateurId);
+        if (number(rendezVous, "proposeurId") != utilisateurId) {
+            throw AuthException.forbidden(
+                "MARKET_APPOINTMENT_NOT_PROPOSER",
+                "Only the author of the visit can move its meeting point."
+            );
+        }
+
+        Instant now = clock.instant();
+        if (!repository.updateRendezVousPoint(
+            rendezVousId,
+            request.latitude(),
+            request.longitude(),
+            optionalText(request.libelle()),
+            now
+        )) {
+            throw AuthException.conflict(
+                "MARKET_APPOINTMENT_POINT_LOCKED",
+                "The point of this visit can no longer be changed."
+            );
+        }
+        LOGGER.info(
+            "event=market.appointment.point.moved utilisateurId={} rendezVousId={} conversationId={}",
+            utilisateurId,
+            rendezVousId,
+            conversationId
+        );
+
+        MarketRepository.ConversationRouting routing = routing(conversationId);
+        publish(routing, "RENDEZ_VOUS", utilisateurId, "Nouveau point GPS proposé pour la visite.");
+        sendToOthers(
+            routing,
+            utilisateurId,
+            MarketEventType.POSITION_A_VALIDER,
+            "Un nouveau point GPS est proposé pour la visite : votre validation est nécessaire.",
+            conversationUrl(routing, otherParticipant(routing, utilisateurId))
+        );
+        return conversationDetail(conversationId, utilisateurId);
+    }
+
+    /**
+     * One participant approves or refuses the pin of a visit.
+     *
+     * <p>Approving records the decision of that side; when both sides have approved, the visit becomes
+     * CONFIRME. Refusing clears both approvals, so the pin has to be proposed again — nothing is acted
+     * upon while one side disagrees with the place.
+     */
+    @Transactional
+    public Map<String, Object> decideRendezVousPoint(long rendezVousId, boolean approved, long utilisateurId) {
+        Map<String, Object> rendezVous = requireRendezVous(rendezVousId);
+        long conversationId = number(rendezVous, "conversationId");
+        requireParticipantConversation(conversationId, utilisateurId);
+        String statut = String.valueOf(rendezVous.get("statut"));
+        if (!AppointmentStatus.ACCEPTE.databaseValue().equals(statut)) {
+            throw AuthException.conflict(
+                "MARKET_APPOINTMENT_NOT_ACCEPTED",
+                "The slot must be accepted before its meeting point is approved."
+            );
+        }
+        if (rendezVous.get("latitude") == null) {
+            throw AuthException.conflict(
+                "MARKET_APPOINTMENT_POINT_MISSING",
+                "This visit has no meeting point yet."
+            );
+        }
+
+        Instant now = clock.instant();
+        long proposeurId = number(rendezVous, "proposeurId");
+        if (!approved) {
+            repository.clearRendezVousPointValidations(rendezVousId);
+            LOGGER.info(
+                "event=market.appointment.point.refused utilisateurId={} rendezVousId={} conversationId={}",
+                utilisateurId,
+                rendezVousId,
+                conversationId
+            );
+            MarketRepository.ConversationRouting routing = routing(conversationId);
+            publish(routing, "RENDEZ_VOUS", utilisateurId, "Point GPS refusé : une nouvelle proposition est attendue.");
+            sendToOthers(
+                routing,
+                utilisateurId,
+                MarketEventType.POINT_REFUSE,
+                "Le point GPS de la visite a été refusé : proposez un autre point pour pouvoir acter le rendez-vous.",
+                conversationUrl(routing, otherParticipant(routing, utilisateurId))
+            );
+            return conversationDetail(conversationId, utilisateurId);
+        }
+
+        if (!repository.markRendezVousPointValidated(rendezVousId, proposeurId == utilisateurId, now)) {
+            throw AuthException.conflict(
+                "MARKET_APPOINTMENT_POINT_LOCKED",
+                "This meeting point can no longer be approved."
+            );
+        }
+
+        boolean confirmed = repository.confirmRendezVous(rendezVousId, now);
+        MarketRepository.ConversationRouting routing = routing(conversationId);
+        if (confirmed) {
+            LOGGER.info(
+                "event=market.appointment.confirmed utilisateurId={} rendezVousId={} conversationId={}",
+                utilisateurId,
+                rendezVousId,
+                conversationId
+            );
+            publish(routing, "RENDEZ_VOUS", utilisateurId, "Point GPS validé par les deux parties : visite actée.");
+            sendToBoth(
+                routing,
+                MarketEventType.VISITE_CONFIRMEE,
+                "Les deux parties ont validé le point GPS : la visite est confirmée.",
+                conversationUrl(routing, routing.clientId)
+            );
+            return conversationDetail(conversationId, utilisateurId);
+        }
+
+        publish(routing, "RENDEZ_VOUS", utilisateurId, "Point GPS validé : en attente de l'autre partie.");
+        return conversationDetail(conversationId, utilisateurId);
     }
 
     // ------------------------------------------------------------------ internals
@@ -675,6 +1024,169 @@ public class MarketService {
             return decimal;
         }
         throw new IllegalStateException("Missing decimal value '" + key + "' in the market repository result.");
+    }
+
+    // ------------------------------------------------------------------ notifications
+
+    /** Email + real-time signal for the opening message of a thread. */
+    private void notifyOpeningMessage(long conversationId, long clientId, String message) {
+        MarketRepository.ConversationRouting routing = routing(conversationId);
+        long vendeurId = routing.vendeurId();
+
+        messagingService.send(new MarketNotification(
+            MarketEventType.MESSAGE_INITIAL,
+            routing.participantEmail(vendeurId),
+            routing.participantFirstName(vendeurId),
+            routing.participantName(clientId),
+            routing.lotTitre(),
+            "Message : " + preview(message),
+            conversationUrl(routing, vendeurId),
+            clock.instant()
+        ));
+        publish(routing, "MESSAGE", clientId, message);
+    }
+
+    /**
+     * Email + real-time signal for the beginning of an action (a negotiation, a visit, a position
+     * request). The counterpart is the recipient; both sides get the live signal so their screens
+     * update together.
+     */
+    private void notifyActionStarted(
+        long conversationId,
+        MarketEventType type,
+        long authorId,
+        String detail,
+        String realtimeType
+    ) {
+        MarketRepository.ConversationRouting routing = routing(conversationId);
+        long recipientId = otherParticipant(routing, authorId);
+
+        messagingService.send(new MarketNotification(
+            type,
+            routing.participantEmail(recipientId),
+            routing.participantFirstName(recipientId),
+            routing.participantName(authorId),
+            routing.lotTitre(),
+            detail,
+            conversationUrl(routing, recipientId),
+            clock.instant()
+        ));
+        publish(routing, realtimeType, authorId, preview(detail));
+    }
+
+    /** Emails both participants, each with the link of their own workspace. */
+    private void sendToBoth(
+        MarketRepository.ConversationRouting routing,
+        MarketEventType type,
+        String detail,
+        String clientUrl
+    ) {
+        messagingService.send(new MarketNotification(
+            type,
+            routing.clientEmail(),
+            routing.clientPrenom(),
+            routing.vendeurNom(),
+            routing.lotTitre(),
+            detail,
+            clientUrl,
+            clock.instant()
+        ));
+        messagingService.send(new MarketNotification(
+            type,
+            routing.vendeurEmail(),
+            routing.vendeurPrenom(),
+            routing.clientNom(),
+            routing.lotTitre(),
+            detail,
+            conversationUrl(routing, routing.vendeurId()),
+            clock.instant()
+        ));
+    }
+
+    /** Emails the participant who did not act. */
+    private void sendToOthers(
+        MarketRepository.ConversationRouting routing,
+        long authorId,
+        MarketEventType type,
+        String detail,
+        String url
+    ) {
+        long recipientId = otherParticipant(routing, authorId);
+        messagingService.send(new MarketNotification(
+            type,
+            routing.participantEmail(recipientId),
+            routing.participantFirstName(recipientId),
+            routing.participantName(authorId),
+            routing.lotTitre(),
+            detail,
+            url,
+            clock.instant()
+        ));
+    }
+
+    /** Pushes one real-time event to both participants of a thread. */
+    private void publish(
+        MarketRepository.ConversationRouting routing,
+        String type,
+        long authorId,
+        String preview
+    ) {
+        realtimeHub.publish(
+            routing.participantIds(),
+            new MarketRealtimeEvent(
+                type,
+                routing.conversationId(),
+                authorId,
+                routing.lotId(),
+                routing.lotTitre(),
+                routing.participantName(authorId),
+                preview(preview),
+                clock.instant()
+            )
+        );
+    }
+
+    private void publishThreadChange(long conversationId, String type, long authorId, String content) {
+        publish(routing(conversationId), type, authorId, content);
+    }
+
+    private MarketRepository.ConversationRouting routing(long conversationId) {
+        return repository.findConversationRouting(conversationId)
+            .orElseThrow(() -> notFound("conversation", "MARKET_CONVERSATION_NOT_FOUND"));
+    }
+
+    private long otherParticipant(MarketRepository.ConversationRouting routing, long utilisateurId) {
+        return utilisateurId == routing.vendeurId() ? routing.clientId() : routing.vendeurId();
+    }
+
+    /** Deep link of the messages screen of the recipient's workspace. */
+    private String conversationUrl(MarketRepository.ConversationRouting routing, long utilisateurId) {
+        String path = utilisateurId == routing.vendeurId() ? SELLER_MESSAGES_PATH : BUYER_MESSAGES_PATH;
+        return frontendBaseUrl + path + "?conversationId=" + routing.conversationId();
+    }
+
+    private String preview(String value) {
+        if (value == null) {
+            return "";
+        }
+        String normalized = value.replaceAll("\\s+", " ").trim();
+        return normalized.length() <= PREVIEW_LENGTH ? normalized : normalized.substring(0, PREVIEW_LENGTH) + "…";
+    }
+
+    private String pointLabel(String lieuLibelle) {
+        String label = optionalText(lieuLibelle);
+        return label == null ? "" : " — " + label;
+    }
+
+    private String instantLabel(Instant value) {
+        return DateTimeFormatter.ofPattern("d MMMM uuuu 'à' HH:mm 'UTC'", Locale.FRENCH)
+            .withZone(ZoneOffset.UTC)
+            .format(value);
+    }
+
+    private Map<String, Object> requirePositionPartage(long partageId) {
+        return repository.findPositionPartage(partageId)
+            .orElseThrow(() -> notFound("position", "MARKET_POSITION_NOT_FOUND"));
     }
 
     private AuthException notFound(String resource, String code) {

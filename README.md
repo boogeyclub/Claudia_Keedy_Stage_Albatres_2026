@@ -78,6 +78,12 @@ module `market` (catalogue, messagerie, négociations, rendez-vous) et un paquet
 | `POST` | `/api/market/conversations/{id}/rendez-vous` | Demander une visite du site (un seul rendez-vous en attente par fil) |
 | `POST` | `/api/market/rendez-vous/{id}/decision` | `ACCEPTER` ou `REFUSER` un rendez-vous proposé par l'autre participant |
 | `POST` | `/api/market/rendez-vous/{id}/annulation` | Annuler sa propre demande de visite |
+| `GET` | `/api/market/events` | Flux **Server-Sent Events** du compte connecté : messages, négociations, visites et positions arrivent sans rechargement (`heartbeat` toutes les 25 s) |
+| `POST` | `/api/market/conversations/{id}/position-demande` | L'acheteur demande au vendeur le **point GPS exact** du lot |
+| `POST` | `/api/market/positions/{id}/decision` | Le vendeur **partage** le point (obligatoire s'il accepte) ou **refuse** |
+| `POST` | `/api/market/positions/{id}/revocation` | Le vendeur retire une position partagée |
+| `PUT` | `/api/market/rendez-vous/{id}/point` | Le proposeur déplace le point de rendez-vous (les validations repartent à zéro) |
+| `POST` | `/api/market/rendez-vous/{id}/point-validation` | Chaque partie **valide ou refuse** le point ; deux validations ⇒ visite `CONFIRME` |
 
 Points de conception notables :
 
@@ -91,6 +97,12 @@ Points de conception notables :
   `gu.sql` est testée par une sonde `LIMIT 0` (aucune donnée n'est lue). Si un élément manque, le
   démarrage s'arrête avec la liste exacte des tables/colonnes absentes ; `SCHEMA_VERIFICATION_FAIL_FAST=false`
   permet de démarrer malgré tout, et `/api/health/database` renvoie le même diagnostic à chaud.
+
+- côté marché, trois mécanismes se complètent : **e-mail au destinataire uniquement aux moments qui
+  ouvrent une action** (premier message d'un fil, négociation, visite, demande de position, point à
+  valider — jamais un e-mail par message, et un envoi raté n'annule jamais l'action) ; **SSE** pour
+  pousser les changements vers les navigateurs ouverts (un flux par onglet, cœur toutes les 25 s) ;
+  **point GPS** validé par les deux parties avant qu'une visite puisse être actée.
 
 ### Front-end — `DEVELOPPEMENT/Front-End`
 
@@ -113,7 +125,7 @@ l'origine via `APP_CORS_ALLOWED_ORIGINS`.
 | `/dashboard/vendeur/profil` | Profil vendeur : compte et résumé de l'activité catalogue |
 | `/dashboard/client/catalogue` | Catalogue des lots publiés : filtres (région, ville, type, dates, prix, volume) et contact du vendeur |
 | `/dashboard/client/messages` | Messagerie par article (messages, négociation, rendez-vous) |
-| `/dashboard/client/deals` | Négociations et rendez-vous en cours, avec réponse directe |
+| `/dashboard/client/deals` | Négociations et rendez-vous en cours, avec réponse directe et point GPS |
 | `/dashboard/account` | Paramètres du compte : profil, changement de mot de passe, sessions navigateur actives |
 
 L'interface est **bilingue français / anglais** (`core/i18n`) et dispose d'un système de

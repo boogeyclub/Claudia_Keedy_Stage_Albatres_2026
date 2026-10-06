@@ -170,6 +170,22 @@ The shared `app-dashboard-header` renders the workspace title of the signed-in r
 
 The navigation collapses behind a hamburger button below the `lg` breakpoint. Every section now opens a real page: the seller catalogue (`/dashboard/vendeur/lots`), the seller profile summary, the buyer catalogue with its filters, the transversal negotiations page and the shared messaging thread. Adding a section means editing the navigation entry, the lazy route and the translation keys — the same role guards (`roleGuard('VENDEUR')`, `roleGuard('CLIENT')`) apply.
 
+### Full-width layout, live messaging and maps
+
+* every screen now uses the whole viewport width: the `max-w-7xl` containers were replaced by
+  `w-full`, so the administrator tables and the messaging page use all the space available;
+* `market-conversations` is a three-pane workspace (inbox, thread, actions) that fills the viewport
+  height and updates itself: `MarketRealtimeService` opens the API stream (`EventSource`, session
+  cookie, automatic reconnection with a capped backoff) and refreshes the inbox, the open thread and
+  a toast when another thread changes;
+* **GPS** is handled by two shared components built on Leaflet + OpenStreetMap:
+  `app-location-picker` (tap the map or use the browser position, optional name of the place) and
+  `app-location-map` (read-only pin with *open in a map* and *get directions* links). They are used by
+  the seller lot form, the position sharing panel and the visit point panel.
+
+> **Dependency**: Leaflet is required (`npm install` after pulling). `angular.json` already loads
+> `node_modules/leaflet/dist/leaflet.css` and allows the CommonJS dependency.
+
 ### Password features
 
 Both password workflows live in the account screens and use the API only:

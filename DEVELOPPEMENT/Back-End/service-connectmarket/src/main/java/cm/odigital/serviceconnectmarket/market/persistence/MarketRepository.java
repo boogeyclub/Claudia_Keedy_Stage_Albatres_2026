@@ -680,27 +680,49 @@ public class MarketRepository {
 
     // ------------------------------------------------------------------ visits (rendez-vous)
 
+    /**
+     * True when a visit of that thread still needs something: an answer, or the approval of the GPS
+     * pin by both participants. A CONFIRME or REFUSE visit no longer blocks a new proposal.
+     */
     public boolean hasOpenRendezVous(long conversationId) {
         return exists(
-            "SELECT EXISTS (SELECT 1 FROM gu.rendez_vous WHERE conversation_id = ? AND statut = 'PROPOSE')",
+            """
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM gu.rendez_vous
+                    WHERE conversation_id = ?
+                      AND statut IN ('PROPOSE', 'ACCEPTE')
+                )
+                """,
             conversationId
         );
     }
 
+    /**
+     * Creates a visit proposal.
+     *
+     * <p>Pinning the meeting point <em>is</em> the proposer's approval of that point, so the proposer
+     * column is filled straight away; the invited participant still has to approve it from their own
+     * workspace before the visit can be CONFIRME.
+     */
     public long insertRendezVous(
         long conversationId,
         long proposeurId,
         Instant dateProposee,
         String lieu,
+        String lieuLibelle,
+        BigDecimal latitude,
+        BigDecimal longitude,
         String note,
         Instant now
     ) {
         Long id = jdbcTemplate.queryForObject(
             """
                 INSERT INTO gu.rendez_vous (
-                    conversation_id, proposeur_id, date_proposee, lieu, note, date_creation
+                    conversation_id, proposeur_id, date_proposee, lieu, lieu_libelle,
+                    latitude, longitude, note, date_creation, point_valide_proposeur_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 RETURNING id
                 """,
             Long.class,
@@ -708,8 +730,12 @@ public class MarketRepository {
             proposeurId,
             Timestamp.from(dateProposee),
             lieu,
+            lieuLibelle,
+            latitude,
+            longitude,
             note,
-            Timestamp.from(now)
+            Timestamp.from(now),
+            latitude == null ? null : Timestamp.from(now)
         );
         return id == null ? 0L : id;
     }
@@ -717,44 +743,251 @@ public class MarketRepository {
     public Optional<Map<String, Object>> findRendezVous(long rendezVousId) {
         List<Map<String, Object>> rendezVous = jdbcTemplate.query(
             """
-                SELECT id, conversation_id, proposeur_id, date_proposee, lieu, note, statut
+                SELECT id, conversation_id, proposeur_id, date_proposee, lieu, lieu_libelle,
+                       latitude, longitude, point_valide_proposeur_at, point_valide_invite_at,
+                       note, statut, date_creation, date_reponse
                 FROM gu.rendez_vous
                 WHERE id = ?
                 """,
-            (resultSet, rowNumber) -> row(
-                "id", resultSet.getLong("id"),
-                "conversationId", resultSet.getLong("conversation_id"),
-                "proposeurId", resultSet.getLong("proposeur_id"),
-                "dateProposee", instant(resultSet, "date_proposee"),
-                "lieu", resultSet.getString("lieu"),
-                "note", resultSet.getString("note"),
-                "statut", resultSet.getString("statut")
-            ),
+            MarketRepository::rendezVousRowMapper,
             rendezVousId
         );
         return rendezVous.stream().findFirst();
     }
 
+    private static Map<String, Object> rendezVousRowMapper(ResultSet resultSet, int rowNumber) throws SQLException {
+        return row(
+            "id", resultSet.getLong("id"),
+            "conversationId", resultSet.getLong("conversation_id"),
+            "proposeurId", resultSet.getLong("proposeur_id"),
+            "dateProposee", instant(resultSet, "date_proposee"),
+            "lieu", resultSet.getString("lieu"),
+            "lieuLibelle", resultSet.getString("lieu_libelle"),
+            "latitude", resultSet.getBigDecimal("latitude"),
+            "longitude", resultSet.getBigDecimal("longitude"),
+            "pointValideProposeurAt", instant(resultSet, "point_valide_proposeur_at"),
+            "pointValideInviteAt", instant(resultSet, "point_valide_invite_at"),
+            "note", resultSet.getString("note"),
+            "statut", resultSet.getString("statut"),
+            "dateCreation", instant(resultSet, "date_creation"),
+            "dateReponse", instant(resultSet, "date_reponse")
+        );
+    }
+
     public List<Map<String, Object>> findRendezVousList(long conversationId) {
         return jdbcTemplate.query(
             """
-                SELECT id, proposeur_id, date_proposee, lieu, note, statut, date_creation, date_reponse
+                SELECT id, conversation_id, proposeur_id, date_proposee, lieu, lieu_libelle,
+                       latitude, longitude, point_valide_proposeur_at, point_valide_invite_at,
+                       note, statut, date_creation, date_reponse
                 FROM gu.rendez_vous
                 WHERE conversation_id = ?
                 ORDER BY date_proposee ASC, id ASC
                 """,
-            (resultSet, rowNumber) -> row(
-                "id", resultSet.getLong("id"),
-                "proposeurId", resultSet.getLong("proposeur_id"),
-                "dateProposee", instant(resultSet, "date_proposee"),
-                "lieu", resultSet.getString("lieu"),
-                "note", resultSet.getString("note"),
-                "statut", resultSet.getString("statut"),
-                "dateCreation", instant(resultSet, "date_creation"),
-                "dateReponse", instant(resultSet, "date_reponse")
-            ),
+            MarketRepository::rendezVousRowMapper,
             conversationId
         );
+    }
+
+    /**
+     * Replaces the GPS pin of a visit from the proposer's side.
+     *
+     * <p>Moving the pin counts as the proposer approving the new one, and it clears the invited
+     * participant's approval: the move has to be approved again before the visit is set.
+     */
+    public boolean updateRendezVousPoint(
+        long rendezVousId,
+        BigDecimal latitude,
+        BigDecimal longitude,
+        String lieuLibelle,
+        Instant movedAt
+    ) {
+        return jdbcTemplate.update(
+            """
+                UPDATE gu.rendez_vous
+                SET latitude = ?,
+                    longitude = ?,
+                    lieu_libelle = ?,
+                    point_valide_proposeur_at = ?,
+                    point_valide_invite_at = NULL
+                WHERE id = ?
+                  AND statut IN ('PROPOSE', 'ACCEPTE')
+                """,
+            latitude,
+            longitude,
+            lieuLibelle,
+            Timestamp.from(movedAt),
+            rendezVousId
+        ) == 1;
+    }
+
+    /**
+     * Records one participant's approval of the current pin.
+     *
+     * <p>The column is chosen from a closed set owned by the caller ({@code proposer} or {@code
+     * invite}), never from request data, so the statement stays static.
+     */
+    public boolean markRendezVousPointValidated(long rendezVousId, boolean proposer, Instant validatedAt) {
+        String column = proposer ? "point_valide_proposeur_at" : "point_valide_invite_at";
+        return jdbcTemplate.update(
+            "UPDATE gu.rendez_vous SET " + column + " = ? "
+                + "WHERE id = ? AND latitude IS NOT NULL AND statut IN ('PROPOSE', 'ACCEPTE')",
+            Timestamp.from(validatedAt),
+            rendezVousId
+        ) == 1;
+    }
+
+    /** Clears both approvals after a refusal: the pin must be proposed again. */
+    public void clearRendezVousPointValidations(long rendezVousId) {
+        jdbcTemplate.update(
+            """
+                UPDATE gu.rendez_vous
+                SET point_valide_proposeur_at = NULL,
+                    point_valide_invite_at = NULL
+                WHERE id = ?
+                  AND statut IN ('PROPOSE', 'ACCEPTE')
+                """,
+            rendezVousId
+        );
+    }
+
+    /** Moves an accepted visit to CONFIRME, the "acté" state both participants approved. */
+    public boolean confirmRendezVous(long rendezVousId, Instant confirmedAt) {
+        return jdbcTemplate.update(
+            """
+                UPDATE gu.rendez_vous
+                SET statut = 'CONFIRME',
+                    date_reponse = ?
+                WHERE id = ?
+                  AND statut = 'ACCEPTE'
+                  AND latitude IS NOT NULL
+                  AND point_valide_proposeur_at IS NOT NULL
+                  AND point_valide_invite_at IS NOT NULL
+                """,
+            Timestamp.from(confirmedAt),
+            rendezVousId
+        ) == 1;
+    }
+
+    // ------------------------------------------------------------------ position sharing
+
+    public Optional<Map<String, Object>> findActivePositionPartage(long conversationId) {
+        return findPositionPartage(
+            """
+                SELECT id, conversation_id, demandeur_id, destinataire_id, statut, latitude, longitude,
+                       libelle, message, date_demande, date_reponse
+                FROM gu.partages_position
+                WHERE conversation_id = ?
+                  AND statut IN ('DEMANDE', 'ACCEPTEE')
+                ORDER BY date_demande DESC, id DESC
+                LIMIT 1
+                """,
+            conversationId
+        );
+    }
+
+    public Optional<Map<String, Object>> findPositionPartage(long partageId) {
+        return findPositionPartage(
+            """
+                SELECT id, conversation_id, demandeur_id, destinataire_id, statut, latitude, longitude,
+                       libelle, message, date_demande, date_reponse
+                FROM gu.partages_position
+                WHERE id = ?
+                """,
+            partageId
+        );
+    }
+
+    private Optional<Map<String, Object>> findPositionPartage(String sql, Object parameter) {
+        List<Map<String, Object>> partages = jdbcTemplate.query(
+            sql,
+            (resultSet, rowNumber) -> row(
+                "id", resultSet.getLong("id"),
+                "conversationId", resultSet.getLong("conversation_id"),
+                "demandeurId", resultSet.getLong("demandeur_id"),
+                "destinataireId", resultSet.getLong("destinataire_id"),
+                "statut", resultSet.getString("statut"),
+                "latitude", resultSet.getBigDecimal("latitude"),
+                "longitude", resultSet.getBigDecimal("longitude"),
+                "libelle", resultSet.getString("libelle"),
+                "message", resultSet.getString("message"),
+                "dateDemande", instant(resultSet, "date_demande"),
+                "dateReponse", instant(resultSet, "date_reponse")
+            ),
+            parameter
+        );
+        return partages.stream().findFirst();
+    }
+
+    public long insertPositionDemande(
+        long conversationId,
+        long demandeurId,
+        long destinataireId,
+        String message,
+        Instant now
+    ) {
+        Long id = jdbcTemplate.queryForObject(
+            """
+                INSERT INTO gu.partages_position (
+                    conversation_id, demandeur_id, destinataire_id, statut, message, date_demande
+                )
+                VALUES (?, ?, ?, 'DEMANDE', ?, ?)
+                RETURNING id
+                """,
+            Long.class,
+            conversationId,
+            demandeurId,
+            destinataireId,
+            message,
+            Timestamp.from(now)
+        );
+        return id == null ? 0L : id;
+    }
+
+    /** Accepts a request with the exact pin, or refuses it without any coordinate. */
+    public boolean updatePositionPartageDecision(
+        long partageId,
+        String statut,
+        BigDecimal latitude,
+        BigDecimal longitude,
+        String libelle,
+        Instant respondedAt
+    ) {
+        return jdbcTemplate.update(
+            """
+                UPDATE gu.partages_position
+                SET statut = ?,
+                    latitude = ?,
+                    longitude = ?,
+                    libelle = ?,
+                    date_reponse = ?
+                WHERE id = ?
+                  AND statut = 'DEMANDE'
+                """,
+            statut,
+            latitude,
+            longitude,
+            libelle,
+            Timestamp.from(respondedAt),
+            partageId
+        ) == 1;
+    }
+
+    /** The seller withdraws a shared position: the row keeps the history, the pin disappears. */
+    public boolean revokePositionPartage(long partageId, Instant revokedAt) {
+        return jdbcTemplate.update(
+            """
+                UPDATE gu.partages_position
+                SET statut = 'REVOQUEE',
+                    latitude = NULL,
+                    longitude = NULL,
+                    date_reponse = ?
+                WHERE id = ?
+                  AND statut = 'ACCEPTEE'
+                """,
+            Timestamp.from(revokedAt),
+            partageId
+        ) == 1;
     }
 
     /**
@@ -804,8 +1037,10 @@ public class MarketRepository {
     public List<Map<String, Object>> findRendezVousFor(long utilisateurId) {
         return jdbcTemplate.query(
             """
-                SELECT rd.id, rd.conversation_id, rd.proposeur_id, rd.date_proposee, rd.lieu, rd.note,
-                       rd.statut, rd.date_creation, rd.date_reponse,
+                SELECT rd.id, rd.conversation_id, rd.proposeur_id, rd.date_proposee, rd.lieu,
+                       rd.lieu_libelle, rd.latitude, rd.longitude,
+                       rd.point_valide_proposeur_at, rd.point_valide_invite_at,
+                       rd.note, rd.statut, rd.date_creation, rd.date_reponse,
                        l.id AS lot_id, l.titre AS lot_titre, l.devise AS lot_devise,
                        CASE WHEN c.client_id = ? THEN ve.prenom || ' ' || ve.nom ELSE cl.prenom || ' ' || cl.nom END AS contrepartie
                 FROM gu.rendez_vous rd
@@ -822,6 +1057,11 @@ public class MarketRepository {
                 "proposeurId", resultSet.getLong("proposeur_id"),
                 "dateProposee", instant(resultSet, "date_proposee"),
                 "lieu", resultSet.getString("lieu"),
+                "lieuLibelle", resultSet.getString("lieu_libelle"),
+                "latitude", resultSet.getBigDecimal("latitude"),
+                "longitude", resultSet.getBigDecimal("longitude"),
+                "pointValideProposeurAt", instant(resultSet, "point_valide_proposeur_at"),
+                "pointValideInviteAt", instant(resultSet, "point_valide_invite_at"),
                 "note", resultSet.getString("note"),
                 "statut", resultSet.getString("statut"),
                 "dateCreation", instant(resultSet, "date_creation"),
@@ -835,6 +1075,24 @@ public class MarketRepository {
             utilisateurId,
             utilisateurId
         );
+    }
+
+    /**
+     * Cancels a visit that is not acted upon yet: the author may withdraw it while the counterpart
+     * has not answered, and also while the GPS pin is still being approved.
+     */
+    public boolean cancelRendezVous(long rendezVousId, Instant cancelledAt) {
+        return jdbcTemplate.update(
+            """
+                UPDATE gu.rendez_vous
+                SET statut = 'ANNULE',
+                    date_reponse = ?
+                WHERE id = ?
+                  AND statut IN ('PROPOSE', 'ACCEPTE')
+                """,
+            Timestamp.from(cancelledAt),
+            rendezVousId
+        ) == 1;
     }
 
     public boolean updateRendezVousStatus(long rendezVousId, String statut, Instant respondedAt) {
@@ -853,6 +1111,42 @@ public class MarketRepository {
     }
 
     // ------------------------------------------------------------------ helpers
+
+    /**
+     * Everything a notification needs about a thread: both participants (with their email and first
+     * name) and the article. One query keeps the mail and the real-time event consistent.
+     */
+    public Optional<ConversationRouting> findConversationRouting(long conversationId) {
+        List<ConversationRouting> routings = jdbcTemplate.query(
+            """
+                SELECT c.id, c.lot_id, l.titre AS lot_titre,
+                       client.id AS client_id, client.email AS client_email,
+                       client.prenom AS client_prenom, client.nom AS client_nom,
+                       vendeur.id AS vendeur_id, vendeur.email AS vendeur_email,
+                       vendeur.prenom AS vendeur_prenom, vendeur.nom AS vendeur_nom
+                FROM gu.conversations c
+                INNER JOIN gu.lots l ON l.id = c.lot_id
+                INNER JOIN gu.utilisateurs client ON client.id = c.client_id
+                INNER JOIN gu.utilisateurs vendeur ON vendeur.id = c.vendeur_id
+                WHERE c.id = ?
+                """,
+            (resultSet, rowNumber) -> new ConversationRouting(
+                resultSet.getLong("id"),
+                resultSet.getLong("lot_id"),
+                resultSet.getString("lot_titre"),
+                resultSet.getLong("client_id"),
+                resultSet.getString("client_email"),
+                resultSet.getString("client_prenom"),
+                resultSet.getString("client_nom"),
+                resultSet.getLong("vendeur_id"),
+                resultSet.getString("vendeur_email"),
+                resultSet.getString("vendeur_prenom"),
+                resultSet.getString("vendeur_nom")
+            ),
+            conversationId
+        );
+        return routings.stream().findFirst();
+    }
 
     public Optional<String> findUtilisateurRole(long utilisateurId) {
         List<String> roles = jdbcTemplate.query(
@@ -949,6 +1243,53 @@ public class MarketRepository {
             row.put((String) values[index], values[index + 1]);
         }
         return row;
+    }
+
+    /**
+     * The two participants of a thread and its article, as needed by notifications.
+     *
+     * @param conversationId the thread
+     * @param lotId the article of that thread
+     * @param lotTitre the article title
+     */
+    public record ConversationRouting(
+        long conversationId,
+        long lotId,
+        String lotTitre,
+        long clientId,
+        String clientEmail,
+        String clientPrenom,
+        String clientNom,
+        long vendeurId,
+        String vendeurEmail,
+        String vendeurPrenom,
+        String vendeurNom
+    ) {
+
+        /** Both participants, in a stable order (buyer first). */
+        public List<Long> participantIds() {
+            return List.of(clientId, vendeurId);
+        }
+
+        public String participantName(long utilisateurId) {
+            return utilisateurId == vendeurId
+                ? displayName(vendeurPrenom, vendeurNom)
+                : displayName(clientPrenom, clientNom);
+        }
+
+        public String participantEmail(long utilisateurId) {
+            return utilisateurId == vendeurId ? vendeurEmail : clientEmail;
+        }
+
+        public String participantFirstName(long utilisateurId) {
+            return utilisateurId == vendeurId ? vendeurPrenom : clientPrenom;
+        }
+
+        private static String displayName(String prenom, String nom) {
+            String first = prenom == null ? "" : prenom.trim();
+            String last = nom == null ? "" : nom.trim();
+            return (first + " " + last).trim();
+        }
     }
 
     /** Safe, code-owned filters of the catalogue query. */

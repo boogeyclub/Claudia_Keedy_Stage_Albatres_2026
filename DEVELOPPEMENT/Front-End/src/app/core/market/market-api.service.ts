@@ -8,6 +8,7 @@ import {
   ConversationDetailResponse,
   ConversationListResponse,
   DealsResponse,
+  GeoPointPayload,
   LotDetailResponse,
   LotPayload,
   MarketMutationResponse,
@@ -123,7 +124,14 @@ export class MarketApiService {
 
   proposeAppointment(
     conversationId: number,
-    payload: { dateProposee: string; lieu: string | null; note: string | null }
+    payload: {
+      dateProposee: string;
+      lieu: string | null;
+      lieuLibelle: string | null;
+      latitude: number;
+      longitude: number;
+      note: string | null;
+    }
   ): Observable<MarketMutationResponse> {
     return this.http.post<MarketMutationResponse>(
       `${this.apiRoot}/conversations/${conversationId}/rendez-vous`,
@@ -146,6 +154,64 @@ export class MarketApiService {
       {},
       { withCredentials: true }
     );
+  }
+
+  /** The buyer asks the seller to share the exact position of the lot. */
+  requestPositionShare(conversationId: number, message: string | null): Observable<ConversationDetailResponse> {
+    return this.http.post<ConversationDetailResponse>(
+      `${this.apiRoot}/conversations/${conversationId}/position-demande`,
+      { message },
+      { withCredentials: true }
+    );
+  }
+
+  /** The seller shares the exact point, or refuses the request. */
+  decidePositionShare(
+    partageId: number,
+    accepted: boolean,
+    point: GeoPointPayload | null
+  ): Observable<ConversationDetailResponse> {
+    return this.http.post<ConversationDetailResponse>(
+      `${this.apiRoot}/positions/${partageId}/decision`,
+      {
+        decision: accepted ? 'ACCEPTER' : 'REFUSER',
+        latitude: accepted ? point?.latitude ?? null : null,
+        longitude: accepted ? point?.longitude ?? null : null,
+        libelle: accepted ? point?.libelle ?? null : null
+      },
+      { withCredentials: true }
+    );
+  }
+
+  revokePositionShare(partageId: number): Observable<ConversationDetailResponse> {
+    return this.http.post<ConversationDetailResponse>(
+      `${this.apiRoot}/positions/${partageId}/revocation`,
+      {},
+      { withCredentials: true }
+    );
+  }
+
+  /** Moves the pin of a visit; the invited participant has to approve it again. */
+  moveAppointmentPoint(rendezVousId: number, point: GeoPointPayload): Observable<ConversationDetailResponse> {
+    return this.http.put<ConversationDetailResponse>(
+      `${this.apiRoot}/rendez-vous/${rendezVousId}/point`,
+      point,
+      { withCredentials: true }
+    );
+  }
+
+  /** Approves or refuses the pin of a visit; two approvals confirm the visit. */
+  decideAppointmentPoint(rendezVousId: number, approved: boolean): Observable<ConversationDetailResponse> {
+    return this.http.post<ConversationDetailResponse>(
+      `${this.apiRoot}/rendez-vous/${rendezVousId}/point-validation`,
+      { decision: approved ? 'VALIDER' : 'REFUSER' },
+      { withCredentials: true }
+    );
+  }
+
+  /** Absolute URL of the live stream, for the browser's EventSource. */
+  get eventsUrl(): string {
+    return `${this.apiRoot}/events`;
   }
 
   private filterParams(filters: CatalogueFilters): HttpParams {

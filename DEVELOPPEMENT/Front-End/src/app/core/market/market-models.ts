@@ -8,7 +8,10 @@
 export type LotStatus = 'BROUILLON' | 'PUBLIE' | 'RESERVE' | 'VENDU' | 'ARCHIVE';
 export type ConversationStatus = 'OUVERTE' | 'EN_NEGOCIATION' | 'ACCORD' | 'CLOTUREE';
 export type NegotiationStatus = 'PROPOSEE' | 'ACCEPTEE' | 'REFUSEE' | 'ANNULEE' | 'EXPIREE';
-export type AppointmentStatus = 'PROPOSE' | 'ACCEPTE' | 'REFUSE' | 'ANNULE';
+export type AppointmentStatus = 'PROPOSE' | 'ACCEPTE' | 'REFUSE' | 'ANNULE' | 'CONFIRME';
+
+/** Life cycle of the seller's answer to a position request. */
+export type PositionShareStatus = 'DEMANDE' | 'ACCEPTEE' | 'REFUSEE' | 'REVOQUEE';
 
 export interface MarketVille {
   readonly id: number;
@@ -125,10 +128,56 @@ export interface MarketAppointment {
   readonly proposeurId: number;
   readonly dateProposee: string;
   readonly lieu: string | null;
+  /** Name of the pinned point, as the proposer typed it. */
+  readonly lieuLibelle: string | null;
+  readonly latitude: number | null;
+  readonly longitude: number | null;
+  /** Set when the author of the proposal approved the pin (pinning it counts as approving it). */
+  readonly pointValideProposeurAt: string | null;
+  /** Set when the invited participant approved the pin. Both are required to confirm the visit. */
+  readonly pointValideInviteAt: string | null;
   readonly note: string | null;
   readonly statut: AppointmentStatus;
   readonly dateCreation: string;
   readonly dateReponse: string | null;
+}
+
+/**
+ * A position request inside one thread: the buyer asks, the seller answers with a GPS point or a
+ * refusal. The active row is part of the thread detail, so both participants see the same pin.
+ */
+export interface MarketPositionShare {
+  readonly id: number;
+  readonly conversationId: number;
+  readonly demandeurId: number;
+  readonly destinataireId: number;
+  readonly statut: PositionShareStatus;
+  readonly latitude: number | null;
+  readonly longitude: number | null;
+  readonly libelle: string | null;
+  readonly message: string | null;
+  readonly dateDemande: string;
+  readonly dateReponse: string | null;
+}
+
+/** One real-time signal pushed by the API over Server-Sent Events. */
+export interface MarketRealtimeEvent {
+  readonly type: 'MESSAGE' | 'NEGOCIATION' | 'RENDEZ_VOUS' | 'POSITION';
+  readonly conversationId: number;
+  /** Account that acted, so a tab can ignore the echo of its own actions. */
+  readonly authorId: number;
+  readonly lotId: number;
+  readonly lotTitre: string;
+  readonly authorName: string;
+  readonly preview: string;
+  readonly at: string;
+}
+
+/** A GPS point submitted to the API. */
+export interface GeoPointPayload {
+  latitude: number;
+  longitude: number;
+  libelle?: string | null;
 }
 
 export interface CatalogueFilters {
@@ -180,6 +229,8 @@ export interface ConversationDetailResponse {
   readonly messages: readonly MarketMessage[];
   readonly negociations: readonly MarketNegotiation[];
   readonly rendezVous: readonly MarketAppointment[];
+  /** Active position request of the thread, or null when there is none. */
+  readonly position: MarketPositionShare | null;
 }
 
 export interface DealNegotiation extends MarketNegotiation {

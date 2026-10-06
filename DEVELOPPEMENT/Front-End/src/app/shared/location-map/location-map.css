@@ -1,0 +1,2 @@
+/* Leaflet owns the layout inside the map area; the host only stacks the figure. */
+:host { display: block; }
