@@ -4,6 +4,13 @@ export interface RuntimeConfiguration {
   apiBaseUrl: string;
 }
 
+/**
+ * Placeholder used only until load() resolves. It is deliberately never reached at runtime:
+ * a missing or invalid config.json aborts the bootstrap instead of silently calling an unintended
+ * API. The shipped public/config.json points at the local backend
+ * (http://localhost:8080/cacaomarketcm/api) because the Angular dev server and Spring run on
+ * different ports; a deployment serving both behind one web server can use /cacaomarketcm/api.
+ */
 const DEFAULT_CONFIGURATION: RuntimeConfiguration = {
   apiBaseUrl: '/cacaomarketcm/api',
 };

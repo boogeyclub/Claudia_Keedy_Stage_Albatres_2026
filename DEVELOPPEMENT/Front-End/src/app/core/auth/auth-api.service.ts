@@ -56,6 +56,18 @@ export interface PasswordResetConfirmationResponse {
   message: string;
 }
 
+/** Self-service password change submitted from the account settings page. */
+export interface PasswordChangePayload {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface PasswordChangeResponse {
+  status: 'UPDATED';
+  message: string;
+}
+
 export interface LoginPayload {
   identity: string;
   password: string;
@@ -113,6 +125,14 @@ export class AuthApiService {
 
   confirmPasswordReset(payload: PasswordResetConfirmationPayload): Observable<PasswordResetConfirmationResponse> {
     return this.http.post<PasswordResetConfirmationResponse>(`${this.apiRoot}/auth/password-reset/confirm`, payload, { withCredentials: true });
+  }
+
+  /**
+   * Changes the password of the signed-in account. The API verifies the current password and
+   * disconnects every other browser session of that account.
+   */
+  changePassword(payload: PasswordChangePayload): Observable<PasswordChangeResponse> {
+    return this.http.post<PasswordChangeResponse>(`${this.apiRoot}/auth/password/change`, payload, { withCredentials: true });
   }
 
   login(payload: LoginPayload): Observable<AuthenticatedUser> {

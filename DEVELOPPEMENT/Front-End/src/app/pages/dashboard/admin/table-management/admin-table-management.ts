@@ -1,26 +1,37 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit, effect, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup, ValidatorFn, Validators } from '@angular/forms';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AdminApiService, AdminRecord } from '../../../../core/admin/admin-api.service';
+import { businessErrorKeyFor } from '../../../../core/admin/admin-error-messages';
 import {
   AdminEditorControl,
+  AdminRecordContext,
+  AdminRowAction,
   AdminTableColumn,
   AdminTableDefinition,
   AdminTableField,
   adminTableForKey
 } from '../../../../core/admin/admin-table-catalog';
+import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 import { TranslationService } from '../../../../core/i18n/translation.service';
 import { NotificationMessage, NotificationService } from '../../../../core/notifications/notification.service';
 
 interface EditorOption {
+  /** Value sent to the API when the form is submitted. */
   value: string;
   label: string;
+  /**
+   * Reference code behind the option (`CLIENT`, `VENDEUR`…). The submitted value is the row id, but
+   * the business rules are written with codes, so exclusions must be able to match on it.
+   */
+  code?: string;
 }
 
 type EditorMode = 'create' | 'edit';
+type TableOperation = 'load' | 'save' | 'remove';
 
 @Component({
   selector: 'app-admin-table-management',
@@ -41,13 +52,21 @@ export class AdminTableManagementComponent implements OnInit {
   protected readonly editorMode = signal<EditorMode | null>(null);
   protected readonly selectedRecord = signal<AdminRecord | null>(null);
   protected readonly removalCandidate = signal<AdminRecord | null>(null);
+  protected readonly rowActionCandidate = signal<{ record: AdminRecord; action: AdminRowAction } | null>(null);
+  protected readonly runningActionRecordId = signal<string | null>(null);
   protected readonly userTypeOptions = signal<readonly EditorOption[]>([]);
   protected readonly basicRightOptions = signal<readonly EditorOption[]>([]);
   protected editorForm: UntypedFormGroup = new UntypedFormGroup({});
 
+  protected readonly recordContext = computed<AdminRecordContext>(() => ({
+    records: this.records(),
+    currentUserId: this.authSession.user()?.id ?? null
+  }));
+
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly adminApi = inject(AdminApiService);
+  private readonly authSession = inject(AuthSessionService);
   private readonly notifications = inject(NotificationService);
   private readonly title = inject(Title);
   private readonly formBuilder = inject(UntypedFormBuilder);
@@ -88,7 +107,7 @@ export class AdminTableManagementComponent implements OnInit {
     ).subscribe({
       next: (response) => this.records.set(response.records),
       error: (error: unknown) => {
-        const message = this.tableRequestFailureMessage(error);
+        const message = this.tableRequestFailureMessage(error, 'load');
         this.records.set([]);
         this.loadFailed.set(true);
         this.loadError.set(message);
@@ -152,14 +171,15 @@ export class AdminTableManagementComponent implements OnInit {
       this.notifications.trackApiCall({
         start: { key: 'notifications.admin.saving' },
         success: { key: 'notifications.admin.saved' },
-        error: (error: unknown) => this.tableRequestFailureMessage(error)
+        error: (error: unknown) => this.tableRequestFailureMessage(error, 'save')
       }),
       finalize(() => this.isSaving.set(false))
     ).subscribe({
       next: () => {
         this.closeEditor();
         this.loadRecords();
-      }
+      },
+      error: () => undefined
     });
   }
 
@@ -169,6 +189,62 @@ export class AdminTableManagementComponent implements OnInit {
       return;
     }
     this.removalCandidate.set(record);
+  }
+
+  /** Row actions the API would accept for this record; the rest stay hidden. */
+  protected visibleRowActions(record: AdminRecord): readonly AdminRowAction[] {
+    const definition = this.table();
+    if (!definition?.rowActions) {
+      return [];
+    }
+    return definition.rowActions.filter(
+      (action) => !action.visibleWhen || action.visibleWhen(record, this.recordContext())
+    );
+  }
+
+  protected askToRunRowAction(record: AdminRecord, action: AdminRowAction): void {
+    if (this.runningActionRecordId() !== null) {
+      return;
+    }
+    this.rowActionCandidate.set({ record, action });
+  }
+
+  protected cancelRowAction(): void {
+    if (!this.runningActionRecordId()) {
+      this.rowActionCandidate.set(null);
+    }
+  }
+
+  /**
+   * Confirms a row action. Nothing about the outcome is guessed here: the API is the only place
+   * that knows whether credentials were generated and sent.
+   */
+  protected confirmRowAction(): void {
+    const candidate = this.rowActionCandidate();
+    if (!candidate || this.runningActionRecordId() !== null) {
+      return;
+    }
+
+    const recordId = this.recordId(candidate.record);
+    this.runningActionRecordId.set(recordId);
+    this.adminApi.runRowAction(candidate.action.path(recordId)).pipe(
+      this.notifications.trackApiCall({
+        start: { key: 'notifications.admin.resettingPassword' },
+        success: { key: 'notifications.admin.passwordResetSent' },
+        error: (error: unknown) => this.tableRequestFailureMessage(error, 'save')
+      }),
+      finalize(() => this.runningActionRecordId.set(null))
+    ).subscribe({
+      next: () => {
+        this.rowActionCandidate.set(null);
+        this.loadRecords();
+      },
+      error: () => undefined
+    });
+  }
+
+  protected isRecordRunningAction(record: AdminRecord): boolean {
+    return this.runningActionRecordId() === this.recordId(record);
   }
 
   protected cancelRemoval(): void {
@@ -190,14 +266,15 @@ export class AdminTableManagementComponent implements OnInit {
       this.notifications.trackApiCall({
         start: { key: 'notifications.admin.removing' },
         success: { key: 'notifications.admin.removed' },
-        error: (error: unknown) => this.tableRequestFailureMessage(error)
+        error: (error: unknown) => this.tableRequestFailureMessage(error, 'remove')
       }),
       finalize(() => this.removingRecordId.set(null))
     ).subscribe({
       next: () => {
         this.removalCandidate.set(null);
         this.loadRecords();
-      }
+      },
+      error: () => undefined
     });
   }
 
@@ -238,7 +315,24 @@ export class AdminTableManagementComponent implements OnInit {
 
   protected canRemove(record: AdminRecord): boolean {
     const definition = this.table();
-    return Boolean(definition?.removeActionKey && (!definition.canRemove || definition.canRemove(record)));
+    return Boolean(
+      definition?.removeActionKey
+      && (!definition.canRemove || definition.canRemove(record, this.recordContext()))
+    );
+  }
+
+  /**
+   * A locked field keeps the record's current value — it is still submitted, because the API
+   * expects the complete payload — but the operator cannot change it. It prevents a request the
+   * API would always refuse, such as renaming a built-in role code or demoting the last
+   * active administrator.
+   */
+  protected isFieldLocked(field: AdminTableField): boolean {
+    const record = this.selectedRecord();
+    if (this.editorMode() !== 'edit' || !record || !field.lockedWhen) {
+      return false;
+    }
+    return field.lockedWhen(record, this.recordContext());
   }
 
   protected isRecordBeingRemoved(record: AdminRecord): boolean {
@@ -259,10 +353,10 @@ export class AdminTableManagementComponent implements OnInit {
       return field.options.map((option) => ({ value: option.value, label: this.i18n.t(option.labelKey) }));
     }
     if (field.lookup === 'userTypes') {
-      return this.userTypeOptions();
+      return this.withoutExcludedValues(this.userTypeOptions(), field);
     }
     if (field.lookup === 'basicRights') {
-      return this.basicRightOptions();
+      return this.withoutExcludedValues(this.basicRightOptions(), field);
     }
     return [];
   }
@@ -327,7 +421,18 @@ export class AdminTableManagementComponent implements OnInit {
     if (field.control === 'email') {
       validators.push(Validators.email);
     }
+    if (field.pattern) {
+      validators.push(Validators.pattern(field.pattern));
+    }
     return validators;
+  }
+
+  private withoutExcludedValues(options: readonly EditorOption[], field: AdminTableField): readonly EditorOption[] {
+    if (!field.excludeValues || field.excludeValues.length === 0) {
+      return options;
+    }
+    const excluded = field.excludeValues;
+    return options.filter((option) => !excluded.includes(option.code ?? option.value));
   }
 
   private loadEditorLookups(definition: AdminTableDefinition): void {
@@ -369,7 +474,7 @@ export class AdminTableManagementComponent implements OnInit {
       if ((typeof id !== 'number' && typeof id !== 'string') || typeof code !== 'string' || typeof name !== 'string') {
         return [];
       }
-      return [{ value: String(id), label: `${code} — ${name}` }];
+      return [{ value: String(id), label: `${code} — ${name}`, code }];
     });
   }
 
@@ -377,11 +482,15 @@ export class AdminTableManagementComponent implements OnInit {
    * A non-zero HTTP status proves the browser reached Spring. Distinguishing that from a status-0
    * CORS/network failure keeps administrators from treating a server-side schema error as a
    * frontend connectivity problem. The request ID is safe to display and can be matched in logs.
-   * The same classification is used for reads and controlled administrator mutations.
+   *
+   * A rejected business rule (409/400 answered with an API error code) is translated instead of
+   * being reported as a failure: creating a buyer account by hand, renaming a built-in role or
+   * demoting the last administrator all come back as an explicit, actionable message.
    */
-  private tableRequestFailureMessage(error: unknown): NotificationMessage {
+  private tableRequestFailureMessage(error: unknown, operation: TableOperation): NotificationMessage {
+    const fallbackKey = this.fallbackKeyFor(operation);
     if (!(error instanceof HttpErrorResponse)) {
-      return { key: 'notifications.admin.loadFailed' };
+      return { key: fallbackKey };
     }
     if (error.status === 0) {
       return { key: 'notifications.admin.connectionFailed' };
@@ -398,7 +507,32 @@ export class AdminTableManagementComponent implements OnInit {
         ? { key: 'notifications.admin.backendDataFailedWithRequestId', params: { requestId } }
         : { key: 'notifications.admin.backendDataFailed' };
     }
-    return { key: 'notifications.admin.loadFailed' };
+
+    const businessKey = businessErrorKeyFor(this.errorCodeOf(error));
+    if (businessKey) {
+      return { key: businessKey };
+    }
+    return { key: fallbackKey };
+  }
+
+  private errorCodeOf(error: HttpErrorResponse): unknown {
+    // An API error body only carries the safe {code, message, timestamp} triple produced by the
+    // backend exception handler; anything else is ignored.
+    const body: unknown = error.error;
+    return typeof body === 'object' && body !== null && 'code' in body
+      ? (body as { code?: unknown }).code
+      : null;
+  }
+
+  private fallbackKeyFor(operation: TableOperation): string {
+    switch (operation) {
+      case 'save':
+        return 'notifications.admin.saveFailed';
+      case 'remove':
+        return 'notifications.admin.removeFailed';
+      default:
+        return 'notifications.admin.loadFailed';
+    }
   }
 
   private formatDate(value: unknown): string {

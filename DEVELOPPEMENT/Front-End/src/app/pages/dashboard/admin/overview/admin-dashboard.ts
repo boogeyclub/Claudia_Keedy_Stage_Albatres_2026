@@ -14,11 +14,6 @@ export class AdminDashboardComponent {
   protected readonly i18n = inject(TranslationService);
   private readonly title = inject(Title);
 
-  protected readonly focusCards = [
-    { icon: 'shield', titleKey: 'dashboard.admin.accessCard.title', descriptionKey: 'dashboard.admin.accessCard.description' },
-    { icon: 'monitor', titleKey: 'dashboard.admin.sessionsCard.title', descriptionKey: 'dashboard.admin.sessionsCard.description' },
-    { icon: 'chart', titleKey: 'dashboard.admin.marketCard.title', descriptionKey: 'dashboard.admin.marketCard.description' }
-  ] as const;
   protected readonly tableCards = ADMIN_TABLE_CATALOG;
 
   constructor() {

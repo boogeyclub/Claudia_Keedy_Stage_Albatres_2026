@@ -3,6 +3,7 @@ import { Title } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthApiService, BrowserSession } from '../../../../core/auth/auth-api.service';
+import { PasswordChangeCardComponent } from './password-change-card/password-change-card';
 import { roleTranslationKeyFor } from '../../../../core/auth/auth-role';
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 import { TranslationService } from '../../../../core/i18n/translation.service';
@@ -10,6 +11,7 @@ import { NotificationService } from '../../../../core/notifications/notification
 
 @Component({
   selector: 'app-account-settings',
+  imports: [PasswordChangeCardComponent],
   templateUrl: './account-settings.html',
   styleUrl: './account-settings.css'
 })
@@ -64,7 +66,8 @@ export class AccountSettingsComponent implements OnInit {
         }),
         finalize(() => this.disconnectingSessionId.set(null))
       ).subscribe({
-        next: () => void this.router.navigateByUrl('/login')
+        next: () => void this.router.navigateByUrl('/login'),
+        error: () => undefined
       });
       return;
     }
@@ -77,7 +80,8 @@ export class AccountSettingsComponent implements OnInit {
       }),
       finalize(() => this.disconnectingSessionId.set(null))
     ).subscribe({
-      next: () => this.sessions.update((items) => items.filter((item) => item.id !== session.id))
+      next: () => this.sessions.update((items) => items.filter((item) => item.id !== session.id)),
+      error: () => undefined
     });
   }
 

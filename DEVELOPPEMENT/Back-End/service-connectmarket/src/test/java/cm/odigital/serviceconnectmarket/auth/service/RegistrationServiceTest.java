@@ -57,14 +57,19 @@ class RegistrationServiceTest {
     void setUp() {
         RegistrationProperties properties = new RegistrationProperties();
         properties.setConfirmationUrl("https://api.example.test/api/auth/registration/confirm");
+        Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
         registrationService = new RegistrationService(
             authRepository,
             passwordEncoder,
-            tokenGenerator,
-            messagingService,
             registrationExpiryService,
-            properties,
-            Clock.fixed(NOW, ZoneOffset.UTC)
+            new RegistrationConfirmationDispatcher(
+                authRepository,
+                tokenGenerator,
+                messagingService,
+                properties,
+                clock
+            ),
+            clock
         );
     }
 

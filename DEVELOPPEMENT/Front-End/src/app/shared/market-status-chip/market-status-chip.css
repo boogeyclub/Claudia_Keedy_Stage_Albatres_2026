@@ -1,0 +1,2 @@
+/* Status colours come from the shared tone mapping in the component. */
+:host { display: inline-flex; }

@@ -5,7 +5,7 @@ import { TranslationService } from '../../../../core/i18n/translation.service';
 import { AdminDashboardComponent } from './admin-dashboard';
 
 describe('AdminDashboardComponent', () => {
-  it('renders one protected management card for each gu schema table', async () => {
+  it('renders one protected management card for each dashboard-managed gu table', async () => {
     await TestBed.configureTestingModule({
       imports: [AdminDashboardComponent],
       providers: [provideRouter([])]
@@ -20,9 +20,13 @@ describe('AdminDashboardComponent', () => {
     const cards = nativeElement.querySelectorAll('[data-testid="admin-table-card"]');
     const links = nativeElement.querySelectorAll('a[href*="/dashboard/admin/tables/"]');
 
-    expect(cards.length).toBe(10);
-    expect(links.length).toBe(10);
+    // The menu is limited to registration, user, buyer-profile, and session management.
+    expect(cards.length).toBe(6);
+    expect(links.length).toBe(6);
     expect(nativeElement.textContent).toContain('Manage the protected gu data tables');
+    for (const outOfScopeSchema of ['gu.password_reset', 'gu.password_history', 'gu.basic_rights', 'gu.type_utilisateur_basic_right']) {
+      expect(nativeElement.textContent).not.toContain(outOfScopeSchema);
+    }
     expect(TestBed.inject(Title).getTitle()).toBe('CacaoMarketCM | Administrator workspace');
   });
 });

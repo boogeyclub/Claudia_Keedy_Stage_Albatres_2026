@@ -58,9 +58,39 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/dashboard/seller/overview/seller-dashboard').then((module) => module.SellerDashboardComponent)
       },
       {
+        path: 'vendeur/lots',
+        canActivate: [roleGuard('VENDEUR')],
+        loadComponent: () => import('./pages/dashboard/seller/lots/seller-lots').then((module) => module.SellerLotsComponent)
+      },
+      {
+        path: 'vendeur/profil',
+        canActivate: [roleGuard('VENDEUR')],
+        loadComponent: () => import('./pages/dashboard/seller/profile/seller-profile').then((module) => module.SellerProfileComponent)
+      },
+      {
+        path: 'vendeur/messages',
+        canActivate: [roleGuard('VENDEUR')],
+        loadComponent: () => import('./pages/dashboard/shared/market-conversations/market-conversations').then((module) => module.MarketConversationsComponent)
+      },
+      {
         path: 'client',
         canActivate: [roleGuard('CLIENT')],
         loadComponent: () => import('./pages/dashboard/client/overview/client-dashboard').then((module) => module.ClientDashboardComponent)
+      },
+      {
+        path: 'client/catalogue',
+        canActivate: [roleGuard('CLIENT')],
+        loadComponent: () => import('./pages/dashboard/client/catalogue/catalogue').then((module) => module.CatalogueComponent)
+      },
+      {
+        path: 'client/deals',
+        canActivate: [roleGuard('CLIENT')],
+        loadComponent: () => import('./pages/dashboard/client/deals/client-deals').then((module) => module.ClientDealsComponent)
+      },
+      {
+        path: 'client/messages',
+        canActivate: [roleGuard('CLIENT')],
+        loadComponent: () => import('./pages/dashboard/shared/market-conversations/market-conversations').then((module) => module.MarketConversationsComponent)
       },
       {
         path: 'account',

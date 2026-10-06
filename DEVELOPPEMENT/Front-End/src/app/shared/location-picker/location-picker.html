@@ -1,0 +1,36 @@
+<div class="overflow-hidden rounded-2xl border border-cacao-gold/30 bg-white">
+  <div class="flex flex-wrap items-center justify-between gap-2 border-b border-cacao-gold/20 bg-cacao-cream/70 px-3 py-2">
+    <p class="text-xs font-extrabold uppercase tracking-[0.1em] text-cacao-amber">{{ i18n.t('market.location.pickHint') }}</p>
+    <span class="flex flex-wrap gap-2">
+      <button class="rounded-full bg-cacao-ink px-3 py-1.5 text-xs font-extrabold text-white transition hover:bg-cacao-roast disabled:cursor-not-allowed disabled:opacity-60"
+              type="button" [disabled]="isLocating()" (click)="useCurrentPosition()">
+        @if (isLocating()) { <span class="mr-1 inline-block size-3 animate-spin rounded-full border-2 border-white border-r-transparent"></span> }
+        {{ i18n.t('market.location.useMyPosition') }}
+      </button>
+      @if (latitude() !== null) {
+        <button class="rounded-full border border-cacao-gold/40 bg-white px-3 py-1.5 text-xs font-extrabold text-cacao-roast transition hover:bg-cacao-pale"
+                type="button" (click)="clear()">{{ i18n.t('market.location.clear') }}</button>
+      }
+    </span>
+  </div>
+
+  <div class="w-full" [class]="heightClass()" data-location-picker #mapHost></div>
+
+  <div class="grid gap-2 border-t border-cacao-gold/20 px-3 py-2 sm:grid-cols-[1fr_auto] sm:items-center">
+    <label class="flex flex-col gap-1">
+      <span class="text-[0.68rem] font-extrabold uppercase tracking-[0.1em] text-cacao-amber">{{ i18n.t('market.location.labelField') }}</span>
+      <input class="h-9 rounded-xl border border-cacao-gold/30 bg-cacao-cream/60 px-3 text-sm font-semibold text-cacao-ink outline-none transition focus:border-cacao-amber focus:bg-white"
+             type="text"
+             [placeholder]="i18n.t('market.location.labelPlaceholder')"
+             [value]="label() ?? ''"
+             (input)="label.set($any($event.target).value)" />
+    </label>
+    <p class="text-xs font-bold text-cacao-brown">
+      @if (latitude() !== null && longitude() !== null) {
+        {{ latitude() }}, {{ longitude() }}
+      } @else {
+        {{ i18n.t('market.location.noPoint') }}
+      }
+    </p>
+  </div>
+</div>

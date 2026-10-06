@@ -1,5 +1,5 @@
 <header class="sticky top-0 z-40 border-b border-cacao-gold/25 bg-cacao-cream/95 backdrop-blur-xl">
-  <div class="mx-auto flex min-h-20 max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+  <div class="mx-auto flex min-h-20 w-full items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
     <a
       class="group inline-flex min-w-0 items-center gap-3"
       [routerLink]="dashboardPath()"
@@ -13,19 +13,42 @@
       </span>
       <span class="hidden leading-none sm:block">
         <span class="block text-[1.04rem] font-black tracking-[-0.05em] text-cacao-ink">{{ i18n.t('common.brandName') }}</span>
-        <span class="mt-1 block text-[0.59rem] font-extrabold uppercase tracking-[0.17em] text-cacao-brown/75">{{ i18n.t('dashboard.shared.workspace') }}</span>
+        <span class="mt-1 block text-[0.59rem] font-extrabold uppercase tracking-[0.17em] text-cacao-brown/75">{{ workspaceTitle() }}</span>
       </span>
     </a>
 
+    @if (navigation().length > 1) {
+      <nav class="hidden items-center gap-1 lg:flex" [attr.aria-label]="i18n.t('dashboard.header.navigationMenu')">
+        @for (item of navigation(); track item.path) {
+          <a
+            class="rounded-xl px-3 py-2 text-sm font-bold text-cacao-brown transition hover:bg-white hover:text-cacao-ink"
+            [routerLink]="item.path"
+            routerLinkActive="bg-white text-cacao-ink shadow-sm"
+            [routerLinkActiveOptions]="{ exact: !!item.exact }"
+          >
+            {{ i18n.t(item.labelKey) }}
+          </a>
+        }
+      </nav>
+    }
+
     <div class="flex items-center gap-2 sm:gap-3">
-      <a
-        class="hidden rounded-xl px-3 py-2 text-sm font-bold text-cacao-brown transition hover:bg-white hover:text-cacao-ink lg:inline-flex"
-        [routerLink]="dashboardPath()"
-        routerLinkActive="bg-white text-cacao-ink shadow-sm"
-        [routerLinkActiveOptions]="{ exact: true }"
-      >
-        {{ i18n.t('dashboard.header.overview') }}
-      </a>
+      @if (navigation().length > 1) {
+        <button
+          class="grid size-10 place-items-center rounded-2xl border border-cacao-gold/35 bg-white text-cacao-ink shadow-[0_5px_18px_rgba(59,33,23,0.08)] transition hover:border-cacao-gold focus:outline-none focus:ring-4 focus:ring-cacao-gold/20 lg:hidden"
+          type="button"
+          [attr.aria-label]="i18n.t('dashboard.header.openMenu')"
+          aria-controls="workspace-navigation"
+          [attr.aria-expanded]="navigationOpen()"
+          (click)="toggleNavigation()"
+        >
+          @if (navigationOpen()) {
+            <svg class="size-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+          } @else {
+            <svg class="size-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+          }
+        </button>
+      }
 
       @if (user(); as currentUser) {
         <div class="relative">
@@ -41,8 +64,8 @@
               {{ initials() }}
             </span>
             <span class="hidden min-w-0 sm:block">
-              <span class="block max-w-32 truncate text-sm font-extrabold text-cacao-ink">{{ displayName() }}</span>
-              <span class="mt-0.5 block max-w-32 truncate text-[0.64rem] font-bold uppercase tracking-[0.1em] text-cacao-brown/70">{{ roleLabel() }}</span>
+              <span class="block max-w-36 truncate text-sm font-extrabold text-cacao-ink">{{ greeting() }}</span>
+              <span class="mt-0.5 block max-w-36 truncate text-[0.64rem] font-bold uppercase tracking-[0.1em] text-cacao-brown/70">{{ roleLabel() }}</span>
             </span>
             <svg class="hidden size-4 text-cacao-brown transition sm:block" [class.rotate-180]="menuOpen()" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -61,7 +84,7 @@
               </div>
 
               <div class="mt-2 space-y-1">
-                <a class="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold text-cacao-ink transition hover:bg-cacao-cream" routerLink="/dashboard/account" (click)="closeMenu()">
+                <a class="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold text-cacao-ink transition hover:bg-cacao-cream" routerLink="/dashboard/account" (click)="closeMenus()">
                   <span class="grid size-8 place-items-center rounded-xl bg-cacao-pale text-cacao-roast">
                     <svg class="size-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 20c.7-3.2 3-5 6.5-5s5.8 1.8 6.5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
                   </span>
@@ -93,4 +116,22 @@
       }
     </div>
   </div>
+
+  @if (navigationOpen()) {
+    <nav id="workspace-navigation" class="border-t border-cacao-gold/20 bg-white/95 lg:hidden" [attr.aria-label]="i18n.t('dashboard.header.navigationMenu')">
+      <div class="mx-auto flex w-full flex-col gap-1 px-4 py-3 sm:px-6">
+        @for (item of navigation(); track item.path) {
+          <a
+            class="rounded-xl px-3 py-2.5 text-sm font-bold text-cacao-brown transition hover:bg-cacao-cream hover:text-cacao-ink"
+            [routerLink]="item.path"
+            routerLinkActive="bg-cacao-cream text-cacao-ink"
+            [routerLinkActiveOptions]="{ exact: !!item.exact }"
+            (click)="closeMenus()"
+          >
+            {{ i18n.t(item.labelKey) }}
+          </a>
+        }
+      </div>
+    </nav>
+  }
 </header>
