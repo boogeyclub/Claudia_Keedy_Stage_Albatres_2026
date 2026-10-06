@@ -1,25 +1,27 @@
 package cm.odigital.serviceconnectmarket.auth.api;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.JdbcTemplate;
+
+import cm.odigital.serviceconnectmarket.schema.SchemaVerificationOutcome;
+import cm.odigital.serviceconnectmarket.schema.SchemaVerificationService;
 
 class ApiDatabaseHealthControllerTest {
 
-    @Test
-    void reportsDatabaseReadinessWhenTheProtectedUserTypeProjectionIsAvailable() {
-        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
-        doNothing().when(jdbcTemplate).execute("SELECT code, tu_name FROM gu.type_utilisateur LIMIT 0");
+    private final SchemaVerificationService schemaVerificationService = mock(SchemaVerificationService.class);
 
-        var response = new ApiDatabaseHealthController(jdbcTemplate).database();
+    @Test
+    void reportsDatabaseReadinessWhenEverySchemaRelationIsReadable() {
+        when(schemaVerificationService.verify()).thenReturn(SchemaVerificationOutcome.complete());
+
+        var response = controller().database();
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(
@@ -29,13 +31,10 @@ class ApiDatabaseHealthControllerTest {
     }
 
     @Test
-    void returnsASafeServiceUnavailableResponseWhenTheSchemaCannotBeRead() {
-        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
-        doThrow(new DataAccessResourceFailureException("database unavailable"))
-            .when(jdbcTemplate)
-            .execute("SELECT code, tu_name FROM gu.type_utilisateur LIMIT 0");
+    void returnsASafeServiceUnavailableResponseWhenTheDatabaseCannotBeRead() {
+        when(schemaVerificationService.verify()).thenReturn(SchemaVerificationOutcome.databaseUnavailable());
 
-        var response = new ApiDatabaseHealthController(jdbcTemplate).database();
+        var response = controller().database();
 
         assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
         assertEquals(
@@ -47,5 +46,29 @@ class ApiDatabaseHealthControllerTest {
             ),
             response.getBody()
         );
+    }
+
+    @Test
+    void reportsTheMissingSchemaElementsWhenTheTrackedScriptWasNotApplied() {
+        when(schemaVerificationService.verify())
+            .thenReturn(SchemaVerificationOutcome.incomplete(List.of("gu.client_entreprise", "gu.utilisateurs.statut")));
+
+        var response = controller().database();
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
+        assertEquals(
+            Map.of(
+                "status", "DEGRADED",
+                "service", "service-connectmarket",
+                "database", "UP",
+                "code", "SCHEMA_TABLES_MISSING",
+                "missingElements", "gu.client_entreprise, gu.utilisateurs.statut"
+            ),
+            response.getBody()
+        );
+    }
+
+    private ApiDatabaseHealthController controller() {
+        return new ApiDatabaseHealthController(schemaVerificationService);
     }
 }

@@ -18,21 +18,27 @@ Angular loads [`public/config.json`](./public/config.json) **before** it bootstr
 
 ```json
 {
-  "apiBaseUrl": "/cacaomarketcm/api"
-}
-```
-
-The default origin-relative value expects the web server to make `/cacaomarketcm/api/...` available from Spring, whose servlet context is lower-case `/cacaomarketcm`. Because the file is fetched relative to Angular's `/CacaoMarketCM/` base path, the built asset is available as `/CacaoMarketCM/config.json`. It is not content-hashed, so a deployment can replace that one JSON file without rebuilding the JavaScript bundles.
-
-There is **no Angular development proxy**. When the frontend and backend have different origins, set `apiBaseUrl` in `public/config.json` to the complete Spring URL before building or deploying, for example:
-
-```json
-{
   "apiBaseUrl": "http://localhost:8080/cacaomarketcm/api"
 }
 ```
 
-A direct cross-origin URL requires Spring CORS to allow the exact frontend origin through `APP_CORS_ALLOWED_ORIGINS`. Keep credentials enabled; browser session cookies are used by the authenticated routes. Invalid or missing runtime configuration stops Angular from bootstrapping rather than silently calling an unintended API.
+That shipped value is the **local development** configuration: the Angular dev server runs on `http://localhost:4200/CacaoMarketCM/` while Spring listens on `http://localhost:8080/cacaomarketcm`, so the API base URL must be absolute. A relative value such as `/cacaomarketcm/api` is resolved against the frontend origin and the request hits the dev server instead of Spring, which answers `404 Not Found` for `POST /cacaomarketcm/api/auth/login`.
+
+There is **no Angular development proxy** and none is needed: the browser calls Spring directly, which is why `apiBaseUrl` is an absolute URL. Two consequences apply to that direct call:
+
+1. Spring CORS must allow the exact frontend origin. The tracked default already does:
+   `app.cors.allowed-origins=${APP_CORS_ALLOWED_ORIGINS:http://localhost:4200}`, with credentials enabled and `X-Request-Id` exposed.
+2. If the frontend is started on a different port or host, add that exact origin to `APP_CORS_ALLOWED_ORIGINS` in `Back-End/service-connectmarket/src/main/resources/.env` and restart the backend.
+
+Because the file is fetched relative to Angular's `/CacaoMarketCM/` base path, the built asset is available as `/CacaoMarketCM/config.json`. It is not content-hashed, so a deployment can replace that one JSON file without rebuilding the JavaScript bundles. A deployment that serves the frontend and Spring behind a single web server can use the origin-relative form instead:
+
+```json
+{
+  "apiBaseUrl": "/cacaomarketcm/api"
+}
+```
+
+Invalid or missing runtime configuration stops Angular from bootstrapping rather than silently calling an unintended API. The accepted values are an absolute `http(s)://` URL or a single-slash origin-relative path; a protocol-relative `//host` value is rejected.
 
 Start the backend service separately before submitting a registration:
 
@@ -63,7 +69,7 @@ Then verify the schema projection required for administrator user types:
 http://localhost:8080/cacaomarketcm/api/health/database
 ```
 
-It returns `200` with `"database":"UP"` only when Spring can read `gu.type_utilisateur.code` and `gu.type_utilisateur.tu_name`. If either check fails, repair Spring/the PostgreSQL schema before debugging the Angular UI.
+It returns `200` with `"database":"UP"` only when Spring can read every relation and column created by `gu.sql` — the same verification the API runs when it starts. An incomplete schema is reported as `503` with `"code":"SCHEMA_TABLES_MISSING"` and a `missingElements` list, while an unreachable PostgreSQL is reported as `503` with `"code":"DATA_ACCESS_UNAVAILABLE"`. Repair the database or apply the script before debugging the Angular UI.
 
 The Angular app sends requests to the `apiBaseUrl` loaded from `config.json`. The backend logs each request without logging request bodies, passwords, or registration/reset-token query values.
 
@@ -93,13 +99,38 @@ A successful login routes each user type to its own protected workspace:
 
 Dashboard routes first call `GET /cacaomarketcm/api/auth/session`, so refreshing a page verifies both the browser cookie and the persistent `gu.sessions_utilisateur` record. The professional dashboard header contains the CacaoMarketCM logo, account menu, language selector, account settings link, and secure sign-out action.
 
-`/CacaoMarketCM/dashboard/account` lists the current account's active browser sessions and can disconnect an unused browser. Apply the latest [`database/gu.sql`](../database/gu.sql) before using these features, because the login flow writes a session record after each successful sign-in.
+`/CacaoMarketCM/dashboard/account` lists the current account's active browser sessions and can disconnect an unused browser. Apply the latest [`database/gu.sql`](../../Back-End/database/gu.sql) before using these features, because the login flow writes a session record after each successful sign-in.
 
 ### Administrator `gu` table management
 
-The administrator dashboard contains one card for each `gu` table and opens a protected route under `/CacaoMarketCM/dashboard/admin/tables/{table}`. The Angular route guard improves navigation, while the Spring API independently checks the persisted active browser session and `ADMINISTRATEUR` role for every request.
+The administrator dashboard contains one card for each **dashboard-managed** `gu` table and opens a protected route under `/CacaoMarketCM/dashboard/admin/tables/{table}`. The Angular route guard improves navigation, while the Spring API independently checks the persisted active browser session and `ADMINISTRATEUR` role for every request.
 
-Configuration and account records expose controlled create/update/removal workflows. `client_particulier` is an audit view of the registration-managed private-buyer relationship, while `client_entreprise` allows only controlled updates to the legal company details. `sessions_utilisateur`, `registration_confirmation`, and `password_reset` remain audit-oriented with only revocation or pending-registration cancellation actions; `password_history` is read-only. The UI deliberately has no column or form field for password hashes, session hashes, confirmation hashes, or reset-token hashes. The server enforces the same allow-list and safety rules.
+The menu is intentionally limited to the platform's current operating scope:
+
+| Purpose | Tables shown |
+| --- | --- |
+| Users | `utilisateurs` (create, update, remove), `type_utilisateur` (the `CLIENT`, `VENDEUR`, and `ADMINISTRATEUR` roles referenced by every account) |
+| Registrations | `registration_confirmation` (pending sign-ups, with a cancel action), plus `client_particulier` and `client_entreprise`, the buyer profiles a `CLIENT` registration creates |
+| Sessions | `sessions_utilisateur` (connected browsers, with a revoke action) |
+
+The password and basic-right tables are deliberately **not** exposed by the dashboard: `gu.password_reset` and `gu.password_history` belong to the self-service password flow, and `gu.basic_rights`/`gu.type_utilisateur_basic_right` are access-configuration tables whose only right (`APP-CONN`) is already granted automatically. The API still supports all ten tables, so re-adding a card means adding its definition to [`admin-table-catalog.ts`](./src/app/core/admin/admin-table-catalog.ts); a URL for a table that is not in the menu redirects back to the dashboard overview.
+
+`client_particulier` is an audit view of the registration-managed private-buyer relationship, while `client_entreprise` allows only controlled updates to the legal company details. `sessions_utilisateur` and `registration_confirmation` remain audit-oriented with only revocation or pending-registration cancellation actions. The UI deliberately has no column or form field for password hashes, session hashes, confirmation hashes, or reset-token hashes. The server enforces the same allow-list and safety rules.
+
+#### What each menu actually allows
+
+The browser never proposes an action the API always refuses. Each table mirrors the server rules through the catalogue predicates (`canRemove`, `lockedWhen`, `excludeValues`) so the workflow stays fluid:
+
+| Menu | Create | Update | Remove / revoke | Rules kept in the UI |
+| --- | --- | --- | --- | --- |
+| Utilisateurs | Yes — `VENDEUR`/`ADMINISTRATEUR` only | Yes | Yes | CLIENT is never offered (the registration workflow owns buyer accounts); the account's type and status are locked for a CLIENT row, for your own account, and for the last active administrator; those rows cannot be deleted either |
+| Types d'utilisateur | Yes | Yes | Yes — custom types only | The `code` of a built-in role is locked and built-in roles cannot be deleted; the code pattern `^[A-Z][A-Z0-9_-]{0,49}$` is validated in the browser too |
+| Clients particuliers | No | No | No | Audit view only |
+| Clients entreprise | No | Yes — legal details | No | The update writes `raison_sociale`, `niu`, `rccm`; duplicate NIU/RCCM are rejected by the API with an explicit message |
+| Inscriptions | No | No | Yes — pending only | The action is hidden as soon as the registration is confirmed; the confirmation explains that the pending account is deleted with it |
+| Sessions | No | No | Yes — revoke | The action is hidden once the session is already invalidated |
+
+Server rejections that cannot be predicted in the browser (a custom type without the `APP-CONN` right, a role already in use, a duplicate identity) are translated from the API error code by [`admin-error-messages.ts`](./src/app/core/admin/admin-error-messages.ts) — `notifications.admin.errors.*` in both languages — instead of surfacing a generic failure message.
 
 ### Dashboard component layout
 
@@ -111,16 +142,73 @@ pages/dashboard/
 │   ├── overview/
 │   └── table-management/
 ├── seller/
+│   ├── lots/            # seller catalogue (create, edit, publish, archive)
+│   ├── profile/         # account + catalogue activity summary
 │   └── overview/
 ├── client/
+│   ├── catalogue/       # published lots, filters, contact the seller
+│   ├── deals/           # negotiations and visit requests
 │   └── overview/
 └── shared/
-    ├── account-settings/
+    ├── market-conversations/   # messaging thread shared by both roles
+    ├── account-settings/       # profile, connected browsers, own password change
     ├── dashboard-redirect.ts
     └── dashboard-shell.*
 ```
 
-Routes stay unchanged; only the lazy-import locations follow this organisation.
+Every page is a standalone component lazily loaded from [`src/app/app.routes.ts`](./src/app/app.routes.ts), behind the role guard of its workspace.
+
+### Role navigation in the dashboard header
+
+The shared `app-dashboard-header` renders the workspace title of the signed-in role and a navigation built from [`src/app/core/auth/role-navigation.ts`](./src/app/core/auth/role-navigation.ts) — the single place to edit when a section is added or renamed:
+
+| Role | Header sections |
+| --- | --- |
+| `ADMINISTRATEUR` | Overview, Users, Registrations, Sessions (the last three open the corresponding `gu` table pages) |
+| `VENDEUR` | Overview, My lots, Seller profile, Messages |
+| `CLIENT` | Overview, Catalogue, Negotiations & visits, Messages |
+
+The navigation collapses behind a hamburger button below the `lg` breakpoint. Every section now opens a real page: the seller catalogue (`/dashboard/vendeur/lots`), the seller profile summary, the buyer catalogue with its filters, the transversal negotiations page and the shared messaging thread. Adding a section means editing the navigation entry, the lazy route and the translation keys — the same role guards (`roleGuard('VENDEUR')`, `roleGuard('CLIENT')`) apply.
+
+### Full-width layout, live messaging and maps
+
+* every screen now uses the whole viewport width: the `max-w-7xl` containers were replaced by
+  `w-full`, so the administrator tables and the messaging page use all the space available;
+* `market-conversations` is a three-pane workspace (inbox, thread, actions) that fills the viewport
+  height and updates itself: `MarketRealtimeService` opens the API stream (`EventSource`, session
+  cookie, automatic reconnection with a capped backoff) and refreshes the inbox, the open thread and
+  a toast when another thread changes;
+* **GPS** is handled by two shared components built on Leaflet + OpenStreetMap:
+  `app-location-picker` (tap the map or use the browser position, optional name of the place) and
+  `app-location-map` (read-only pin with *open in a map* and *get directions* links). They are used by
+  the seller lot form, the position sharing panel and the visit point panel.
+
+> **Dependency**: Leaflet is required (`npm install` after pulling). `angular.json` already loads
+> `node_modules/leaflet/dist/leaflet.css` and allows the CommonJS dependency.
+
+### Password features
+
+Both password workflows live in the account screens and use the API only:
+
+| Where | What it does |
+| --- | --- |
+| `/dashboard/*/account-settings` (`PasswordChangeCardComponent`) | The signed-in account changes its own password: current password required, 8 to 72 characters, confirmation field, inline mismatch message. The calling browser session stays connected, every other session of that account is revoked, and the typed values are cleared as soon as the API accepts them. |
+| `admin/table-management` on the `utilisateurs` table | The administrator gets a **Reset password** button on active accounts only. The confirmation block states that the password is generated server-side, emailed to the account owner and never displayed. The row buttons are disabled while an action runs, and the list reloads after the API confirms the reset. |
+
+Error codes are translated through [`src/app/core/admin/admin-error-messages.ts`](./src/app/core/admin/admin-error-messages.ts); the credentials email can only fail as `CREDENTIALS_MAIL_DELIVERY_UNAVAILABLE`, which the API reports *before* changing anything.
+
+### Market API client
+
+[`src/app/core/market/`](./src/app/core/market/) holds everything the market pages share:
+
+| File | Responsibility |
+| --- | --- |
+| `market-api.service.ts` | Credentialed calls to `/api/market/*`; builds the catalogue query string from the filters. |
+| `market-models.ts` | Typed payloads returned by the API (lots, conversations, messages, negotiations, visits). |
+| `market-status.ts` | Maps the stored status codes to translation keys and badge tones, so no code is shown raw. |
+| `market-format.ts` | Locale-aware price, volume and date formatting. |
+
+The status badges themselves come from the shared `app-market-status-chip` component. A conversation is always opened from a lot, which is why the catalogue contact form and both messaging pages share the same service calls.
 
 ## Code scaffolding
 

@@ -150,6 +150,56 @@ public class SmtpRegistrationMessagingService implements RegistrationMessagingSe
         }
     }
 
+    @Override
+    public void sendCredentials(CredentialsMessage credentials) {
+        if (!isConfigured()) {
+            LOGGER.warn(
+                "event=credentials.mail.dispatch.rejected reason=SMTP_CONFIGURATION_MISSING hostConfigured={} usernameConfigured={} passwordConfigured={}",
+                StringUtils.hasText(mailHost),
+                StringUtils.hasText(mailUsername),
+                StringUtils.hasText(mailPassword)
+            );
+            throw AuthException.unavailable(
+                "CREDENTIALS_MAIL_DELIVERY_UNAVAILABLE",
+                "Google SMTP email delivery is not configured."
+            );
+        }
+
+        LOGGER.info(
+            "event=credentials.mail.smtp-send.started smtpHost={} recipient={}",
+            mailHost,
+            AuditValue.maskedEmail(credentials.recipientEmail())
+        );
+        SimpleMailMessage email = new SimpleMailMessage();
+        email.setFrom(senderAddress());
+        email.setTo(credentials.recipientEmail());
+        email.setSubject(credentialsSubjectFor(credentials.language()));
+        email.setText(credentialsBodyFor(credentials));
+
+        JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
+        if (mailSender == null) {
+            LOGGER.warn("event=credentials.mail.dispatch.rejected reason=MAIL_SENDER_BEAN_UNAVAILABLE");
+            throw AuthException.unavailable(
+                "CREDENTIALS_MAIL_DELIVERY_UNAVAILABLE",
+                "Email delivery is not configured."
+            );
+        }
+
+        try {
+            mailSender.send(email);
+            LOGGER.info("event=credentials.mail.smtp-send.completed");
+        } catch (MailException exception) {
+            LOGGER.warn(
+                "event=credentials.mail.smtp-send.failed exceptionType={}",
+                exception.getClass().getName()
+            );
+            throw AuthException.unavailable(
+                "CREDENTIALS_MAIL_DELIVERY_UNAVAILABLE",
+                "The credentials email could not be sent."
+            );
+        }
+    }
+
     private boolean isConfigured() {
         return StringUtils.hasText(mailHost)
             && StringUtils.hasText(mailUsername)
@@ -194,6 +244,50 @@ public class SmtpRegistrationMessagingService implements RegistrationMessagingSe
 
             If you did not request this registration, you can safely ignore this email.
             """.formatted(confirmation.recipientFirstName(), confirmation.confirmationUrl());
+    }
+
+    private String credentialsSubjectFor(RegistrationLanguage language) {
+        return language == RegistrationLanguage.FR
+            ? "Vos nouveaux identifiants CacaoMarketCM"
+            : "Your new CacaoMarketCM credentials";
+    }
+
+    private String credentialsBodyFor(CredentialsMessage credentials) {
+        if (credentials.language() == RegistrationLanguage.FR) {
+            return """
+                Bonjour %s,
+
+                Un administrateur CacaoMarketCM a réinitialisé le mot de passe de votre compte. Voici vos nouveaux identifiants de connexion :
+
+                Identifiant : %s
+                Mot de passe : %s
+
+                Pour votre sécurité, toutes vos sessions de navigateur ont été déconnectées. Connectez-vous avec ces identifiants, puis changez ce mot de passe depuis les paramètres de votre compte.
+
+                Si vous n'êtes pas à l'origine de cette demande, contactez immédiatement l'administration de la plateforme.
+                """.formatted(
+                credentials.recipientFirstName(),
+                credentials.login(),
+                credentials.password()
+            );
+        }
+
+        return """
+            Hello %s,
+
+            A CacaoMarketCM administrator reset the password of your account. Here are your new sign-in credentials:
+
+            Login: %s
+            Password: %s
+
+            For your security, every browser session of your account has been disconnected. Sign in with these credentials, then change this password from your account settings.
+
+            If you did not expect this change, contact the platform administration immediately.
+            """.formatted(
+            credentials.recipientFirstName(),
+            credentials.login(),
+            credentials.password()
+        );
     }
 
     private String passwordResetSubjectFor(RegistrationLanguage language) {

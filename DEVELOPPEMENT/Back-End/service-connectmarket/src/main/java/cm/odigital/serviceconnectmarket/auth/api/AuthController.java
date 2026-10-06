@@ -24,6 +24,7 @@ import cm.odigital.serviceconnectmarket.auth.api.dto.AuthenticatedUserResponse;
 import cm.odigital.serviceconnectmarket.auth.api.dto.BrowserSessionResponse;
 import cm.odigital.serviceconnectmarket.auth.api.dto.ConfirmationResponse;
 import cm.odigital.serviceconnectmarket.auth.api.dto.LoginRequest;
+import cm.odigital.serviceconnectmarket.auth.api.dto.PasswordChangeRequest;
 import cm.odigital.serviceconnectmarket.auth.api.dto.PasswordResetConfirmationRequest;
 import cm.odigital.serviceconnectmarket.auth.api.dto.PasswordResetConfirmationResponse;
 import cm.odigital.serviceconnectmarket.auth.api.dto.PasswordResetRequest;
@@ -34,6 +35,7 @@ import cm.odigital.serviceconnectmarket.auth.domain.AuthException;
 import cm.odigital.serviceconnectmarket.auth.domain.AuthenticatedUtilisateur;
 import cm.odigital.serviceconnectmarket.auth.domain.PendingRegistration;
 import cm.odigital.serviceconnectmarket.auth.domain.RegistrationCommand;
+import cm.odigital.serviceconnectmarket.auth.service.AccountPasswordService;
 import cm.odigital.serviceconnectmarket.auth.service.AuthenticationService;
 import cm.odigital.serviceconnectmarket.auth.service.PasswordResetService;
 import cm.odigital.serviceconnectmarket.auth.service.RegistrationService;
@@ -60,17 +62,20 @@ public class AuthController {
     private final RegistrationService registrationService;
     private final AuthenticationService authenticationService;
     private final PasswordResetService passwordResetService;
+    private final AccountPasswordService accountPasswordService;
     private final UserSessionService userSessionService;
 
     public AuthController(
         RegistrationService registrationService,
         AuthenticationService authenticationService,
         PasswordResetService passwordResetService,
+        AccountPasswordService accountPasswordService,
         UserSessionService userSessionService
     ) {
         this.registrationService = registrationService;
         this.authenticationService = authenticationService;
         this.passwordResetService = passwordResetService;
+        this.accountPasswordService = accountPasswordService;
         this.userSessionService = userSessionService;
     }
 
@@ -148,6 +153,28 @@ public class AuthController {
         return new PasswordResetConfirmationResponse(
             "RESET",
             "Your password has been reset. Sign in with your new password."
+        );
+    }
+
+    /**
+     * Changes the password of the signed-in account. The current password is required, and every
+     * other browser session of that account is disconnected.
+     */
+    @PostMapping("/password/change")
+    public PasswordResetConfirmationResponse changePassword(
+        @Valid @RequestBody PasswordChangeRequest request,
+        HttpServletRequest servletRequest
+    ) {
+        AuthenticatedSession session = userSessionService.requireAuthenticatedSession(servletRequest.getSession(false));
+        accountPasswordService.changePassword(
+            session.utilisateur().id(),
+            session.sessionId(),
+            request.currentPassword(),
+            request.newPassword()
+        );
+        return new PasswordResetConfirmationResponse(
+            "UPDATED",
+            "Your password has been updated."
         );
     }
 

@@ -1,0 +1,14 @@
+<figure class="overflow-hidden rounded-2xl border border-cacao-gold/30 bg-white">
+  <div class="w-full" [class]="heightClass()" data-location-map #mapHost></div>
+  <figcaption class="flex flex-wrap items-center justify-between gap-2 border-t border-cacao-gold/20 px-3 py-2">
+    <span class="text-xs font-bold text-cacao-brown">
+      {{ label() ?? (latitude() + ', ' + longitude()) }}
+    </span>
+    <span class="flex flex-wrap gap-2">
+      <a class="rounded-full border border-cacao-gold/40 bg-cacao-cream px-3 py-1 text-xs font-extrabold text-cacao-roast transition hover:bg-cacao-pale"
+         [href]="openStreetMapUrl()" target="_blank" rel="noopener noreferrer">{{ i18n.t('market.location.openMap') }}</a>
+      <a class="rounded-full bg-cacao-ink px-3 py-1 text-xs font-extrabold text-white transition hover:bg-cacao-roast"
+         [href]="directionsUrl()" target="_blank" rel="noopener noreferrer">{{ i18n.t('market.location.directions') }}</a>
+    </span>
+  </figcaption>
+</figure>

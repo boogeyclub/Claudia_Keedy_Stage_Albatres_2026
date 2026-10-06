@@ -1,0 +1,2 @@
+/* The map area is sized by the caller through heightClass. */
+:host { display: block; }
